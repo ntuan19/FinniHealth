@@ -1,11 +1,3 @@
-# [React Flask Authentication](https://blog.appseed.us/react-flask-authentication/)
-
-Open-source full-stack seed project that uses a `React UI` powered by a simple `Flask API Server`. **[React Flask Authentication](https://blog.appseed.us/react-flask-authentication/)** sample can be used to bootstrap fast a new project using a tested `development-ready` stack or simply for eLearning purposes by beginners. For newcomers, **React** is a popular Javascript library for coding user interfaces baked by Facebook and Flask is a leading web framework written in Python. 
-
-- 👉 [React Flask Authentication](https://react-flask-authentication.appseed-srv1.com/) - LIVE Demo
-- 👉 LIVE [Support](https://react-flask-authentication.appseed-srv1.com/) via [Discord](https://discord.gg/fZC6hup) - provided by AppSeed
-
-<br />
 
 ## ✨ **Start the Flask API** via `Docker`
 
@@ -49,11 +41,6 @@ $ yarn start
 Once all the above commands are executed, the `React UI` should be visible in the browser. By default, the app redirects the guest users to authenticate. 
 After we register a new user and signIN, all the private pages become accessible. 
 
-<br />
-
-![React Flask Authentication - Open-source full-stack seed project crafted by CodedThemes and AppSeed.](https://user-images.githubusercontent.com/51070104/137620059-07547eb2-0e7c-45e3-b825-67f5c72e4d3e.gif)
-
-<br />
 
 ## ✨ General Information
 
@@ -196,15 +183,3 @@ authorization: JWT_TOKEN (returned by Login request)
 > React Flask Authentication - Colors
 
 ![React Flask Authentication - Colors.](https://user-images.githubusercontent.com/51070104/141444532-46a3bcd0-841b-4725-aa82-122569cd678a.jpg)
-
-<br />
-
-## ✨ Links & Resources
-
-- Ask for [Support](https://appseed.us/support) on [Discord](https://discord.gg/fZC6hup)
-- See for [React Starters](https://appseed.us/apps/react) - index provided by AppSeed
-
-<br />
-
----
-**[React Flask Authentication](https://blog.appseed.us/react-flask-authentication/)** - Open-source full-stack seed project provided by **[AppSeed](https://appseed.us/)**
