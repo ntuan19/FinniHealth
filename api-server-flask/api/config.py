@@ -7,6 +7,7 @@ import os, random, string
 from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 class BaseConfig():
     
@@ -21,6 +22,9 @@ class BaseConfig():
     GITHUB_CLIENT_ID     = os.getenv('GITHUB_CLIENT_ID' , None)
     GITHUB_CLIENT_SECRET = os.getenv('GITHUB_SECRET_KEY', None)
     
+    GOOGLE_CLIENT_ID = os.getenv('GG_ID',None)
+    GOOGLE_CLIENT_SECRET = os.getenv('GG_SECRET',None)
+
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

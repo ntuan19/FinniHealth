@@ -1,7 +1,4 @@
 # -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
 
 from datetime import datetime
 
@@ -9,6 +6,7 @@ import json
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from flask_dance.contrib.google import make_google_blueprint, google
 
 db = SQLAlchemy()
 
@@ -20,6 +18,9 @@ class Users(db.Model):
     password = db.Column(db.Text())
     jwt_auth_active = db.Column(db.Boolean())
     date_joined = db.Column(db.DateTime(), default=datetime.utcnow)
+    oauth_provider = db.Column(db.String(50),nullable=True)
+    oauth_user_id = db.Column(db.String(120), unique=True, nullable=True)
+
 
     def __repr__(self):
         return f"User {self.username}"
@@ -83,3 +84,44 @@ class JWTTokenBlocklist(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+
+class Patient(db.Model):
+    __tablename__ = 'patient'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    dob = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(100), nullable=False)
+    
+    address = db.relationship('Address', backref='patient', lazy=True)
+    fields = db.relationship('Field', backref='patient', lazy=True)
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+class Address(db.Model):
+    __tablename__ = 'address'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    street = db.Column(db.String(200))
+    city =  db.Column(db.String(200))
+    state = db.Column(db.String(200))
+    zipcode = db.Column(db.String(200))
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        
+
+class Field(db.Model):
+    __tablename__ = 'field'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    field_name = db.Column(db.String(200), nullable=False)
+    field_value = db.Column(db.String(200), nullable=True)
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        

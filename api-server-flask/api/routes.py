@@ -8,17 +8,19 @@ from datetime import datetime, timezone, timedelta
 from functools import wraps
 
 from flask import request
+from sqlalchemy import or_
 from flask_restx import Api, Resource, fields
-
 import jwt
-
-from .models import db, Users, JWTTokenBlocklist
+import jsonify 
+from .models import db, Users, JWTTokenBlocklist, Patient, Address, Field
 from .config import BaseConfig
 import requests
-
+import sqlite3
+from datetime import datetime
+from requests_oauthlib import OAuth2Session
+from flask_dance.contrib.google import make_google_blueprint
 rest_api = Api(version="1.0", title="Users API")
-
-
+from flask import session, redirect 
 """
     Flask-Restx models for api request and response data
 """
@@ -79,9 +81,66 @@ def token_required(f):
     return decorator
 
 
+def create_google_object():
+    # Register OAuth Blueprint
+    redirect_uri = "http://127.0.0.1:5000/api/users/google_callback"
+    google = OAuth2Session(BaseConfig.GOOGLE_CLIENT_ID, redirect_uri=redirect_uri,
+                       scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"])
+    print(BaseConfig.GOOGLE_CLIENT_ID)
+    return google
+    
+
 """
     Flask-Restx routes
 """
+
+@rest_api.route("/api/users/google_register")
+class GoogleRegister(Resource):
+    def get(self):
+        print("It got here")
+        google = create_google_object()
+        authorization_base_url = 'https://accounts.google.com/o/oauth2/auth'
+        token_url = 'https://accounts.google.com/o/oauth2/token'
+        authorization_url, state = google.authorization_url(authorization_base_url)
+        session['oauth_state'] = state
+        return {"url":authorization_url}
+
+@rest_api.route("/api/users/google_callback")
+class GoogleCallback(Resource):
+    def get(self):
+        if 'error' in request.args:
+            return {"success": False, "msg": request.args.get('error')}, 400
+        
+        google = create_google_object()
+        token = google.fetch_token('https://accounts.google.com/o/oauth2/token',
+                           authorization_response=request.url,
+                           client_secret=BaseConfig.GOOGLE_CLIENT_SECRET)
+        google_user_info = google.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
+        email = google_user_info.get('email')
+        open_id = google_user_info.get("openid")
+        print(email,open_id)
+        # Check if user already exists
+        user_exists = Users.get_by_email(email)
+        if user_exists:
+            user = user_exists
+        else:
+            # Register the new user
+            username = google_user_info.get('name')
+            user = Users(username=username, email=email)
+            user.save()
+        
+        # Create JWT Token for user
+        token = jwt.encode({'email': email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
+        
+        # Set JWT Auth Active
+        user.set_jwt_auth_active(True)
+        user.save()
+        
+        return {"success": True,
+                "user": user.toJSON(),
+                "token": token}, 200
+
+
 
 
 @rest_api.route('/api/users/register')
@@ -240,3 +299,252 @@ class GitHubLogin(Resource):
                     "username": user_json['username'],
                     "token": token,
                 }}, 200
+
+
+@rest_api.route("/api/users/add_patient",methods=["POST"])
+class UserPatient(Resource):
+    # @token_required
+    def post(self):
+        req_data = request.get_json()
+        name = req_data["name"]
+        dateofbirth = req_data["dob"]
+        date_format = '%Y-%m-%d'
+        date_object = datetime.strptime(dateofbirth, date_format).date()
+        status = req_data["status"]
+        addresses = req_data["addresses"]
+        field_data = req_data["fields"]
+        print(name,date_object,status)
+        print("success getting data")
+        new_patient = Patient(name=name, dob=date_object,status = status)
+        print(new_patient.id)
+        print("success adding patient infor")
+        new_patient.save()        
+        # Commit the session to get the id for the new patient
+        
+        # Add addresses to the patient
+        for address in addresses:
+            street = address["street"]
+            city = address["city"]
+            state = address["state"]
+            zipcode = address["zipcode"]
+            new_address = Address(patient_id=new_patient.id,street = street,city=city,state=state,zipcode=zipcode )
+            new_address.save()
+            
+        # Add field data to the patient
+        for field in field_data:
+            new_field = Field(patient_id=new_patient.id, field_name=field["field_name"], field_value=field["field_value"])
+            new_field.save()
+        
+        # Commit the session to save the addresses and fields to the database
+        print("_________________________________")
+        return {"success": True,
+                "result": "Successfully Added New Patient"
+                }, 200
+
+@rest_api.route("/api/users/update_patient/<int:patient_id>")
+class UpdatePatient(Resource):
+    
+    # @token_required
+    def put(self, patient_id):
+        # Fetch the patient by id from the database
+        patient = Patient.query.get(patient_id)
+        
+        if not patient:
+            return {"success": False, "message": "Patient not found"}, 404
+        req_data = request.get_json(silent=True)
+        if req_data is None:
+            return {"success": False, "error": "Invalid JSON format"}, 400
+        if "name" in req_data:
+            patient.name = req_data["name"]
+        if "dob" in req_data:
+            dateofbirth = req_data["dob"]
+            date_format = '%Y-%m-%d'
+            date_object = datetime.strptime(dateofbirth, date_format).date()
+            patient.dob = date_object
+        if "status" in req_data:
+            patient.status = req_data["status"]
+        if "address" in req_data:
+            new_addresses = req_data["address"]
+            
+            # Update existing and add new addresses
+            existing_addresses_ids = [address.id for address in patient.address]
+            for address_data in new_addresses:
+                if "id" in address_data and address_data["id"] in existing_addresses_ids:
+                    # Update existing address
+                    address = Address.query.get(address_data["id"])
+                    address.street = address_data.get("street", address.street)
+                    address.city = address_data.get("city", address.city)
+                    address.state = address_data.get("state", address.state)
+                    address.zipcode = address_data.get("zipcode", address.zipcode)
+                else:
+                    # Add new address
+                    new_address = Address(patient_id=patient.id, **address_data)
+                    db.session.add(new_address)
+            
+            # Delete addresses that were not in the received data
+            for address in patient.address:
+                if address.id not in [address_data.get("id") for address_data in new_addresses]:
+                    db.session.delete(address)
+        
+        # Similar logic for updating field data
+        if "fields" in req_data:
+            new_fields = req_data["fields"]
+            existing_field_ids = [field.id for field in patient.fields]
+            for field_data in new_fields:
+                if "id" in field_data and field_data["id"] in existing_field_ids:
+                    # Update existing field
+                    field = Field.query.get(field_data["id"])
+                    field.field_name = field_data.get("field_name", field.field_name)
+                    field.field_value = field_data.get("field_value", field.field_value)
+                else:
+                    # Add new field
+                    new_field = Field(patient_id=patient.id, **field_data)
+                    db.session.add(new_field)
+            
+            # Delete fields that were not in the received data
+            for field in patient.fields:
+                if field.id not in [field_data.get("id") for field_data in new_fields]:
+                    db.session.delete(field)
+        
+        db.session.commit()
+        return {"success": True,
+                "result": "Successfully Edited New Patient",
+
+                }, 200
+
+@rest_api.route("/api/users/get_patient/<int:patient_id>")
+class PatientInformation(Resource):
+    def get(self, patient_id):
+        # Query the database to get the patient by ID
+        patient = Patient.query.get(patient_id)
+        
+        # If the patient does not exist, return an error
+        if patient is None:
+            return {"success": False, "message": "Patient not found"}, 404
+        
+        # If the patient exists, collect the information and return it
+        patient_info = {
+            "id": patient.id,
+            "name": patient.name,
+            "dob": patient.dob.isoformat(),
+            "status": patient.status,
+            "address": [{
+                "street": address.street,
+                "city": address.city,
+                "state": address.state,
+                "zipcode": address.zipcode,
+            } for address in patient.address],
+
+            "fields": [{
+                "field_name": field.field_name,
+                "field_value": field.field_value,
+            } for field in patient.fields],
+        }
+        
+        return {"success": True, "patient": patient_info}, 200
+
+
+@rest_api.route("/api/users/dashboard")
+class Dashboard(Resource):
+    def get(self):
+        # Connect to the SQLite database
+        db_path = "/Users/ntuan_195/react-flask-authentication/api-server-flask/api/db.sqlite3"
+        conn = sqlite3.connect(db_path)
+        # Create a cursor object to execute SQL queries
+        cursor = conn.cursor()
+        # Execute the SQL queries and fetch the results
+        cursor.execute("""
+            SELECT patient.id, patient.name, patient.dob, patient.status, 
+                address.street, address.city, address.state, address.zipcode
+            FROM patient
+            LEFT JOIN address ON patient.id = address.patient_id;
+        """)
+        patients_with_addresses = cursor.fetchall()
+        
+        cursor.execute("""
+            SELECT patient.id, field.field_name, field.field_value
+            FROM patient
+            LEFT JOIN field ON patient.id = field.patient_id;
+        """)
+        patients_with_fields = cursor.fetchall()
+
+        # Organize the results into a more structured format
+        patients_info = {}
+        for row in patients_with_addresses:
+            patient_id, name, dob, status, street, city, state, zipcode = row
+            if patient_id not in patients_info:
+                patients_info[patient_id] = {
+                    "id": patient_id,
+                    "name": name,
+                    "dob": dob,
+                    "status": status,
+                    "addresses": [],
+                    "fields": []
+                }
+            if street:  # Check if address details are not None
+                patients_info[patient_id]["addresses"].append({
+                    "street": street,
+                    "city": city,
+                    "state": state,
+                    "zipcode": zipcode
+                })
+        
+        for row in patients_with_fields:
+            patient_id, field_name, field_value = row
+            if patient_id in patients_info:
+                patients_info[patient_id]["fields"].append({
+                    "field_name": field_name,
+                    "field_value": field_value
+                })
+        
+        # Close the cursor and connection
+        cursor.close()
+        conn.close()
+        
+        # Return the organized results
+        return {"status_code":200,"patients":patients_info}
+
+@rest_api.route("/api/users/search")
+class GeneralSearch(Resource):
+    def get(self):
+        # Get search query parameter
+        query = request.args.get('query', default="", type=str)
+        
+        # Perform search query in the database
+        patients = db.session.query(Patient).join(Address, isouter=True).join(Field, isouter=True).filter(
+            or_(
+                Patient.name.like(f'%{query}%'),
+                Patient.status.like(f'%{query}%'),
+                Address.street.like(f'%{query}%'),
+                Address.city.like(f'%{query}%'),
+                Address.state.like(f'%{query}%'),
+                Address.zipcode.like(f'%{query}%'),
+                Field.field_name.like(f'%{query}%'),
+                Field.field_value.like(f'%{query}%')
+            )
+        ).distinct().all()
+
+        
+        # Format the results
+        results = [{
+            "id": patient.id,
+            "name": patient.name,
+            "dob": patient.dob.isoformat(),
+            "status": patient.status,
+            "addresses": [{
+                "street": address.street,
+                "city": address.city,
+                "state": address.state,
+                "zipcode": address.zipcode,
+            } for address in patient.address],
+            "fields": [{
+                "field_name": field.field_name,
+                "field_value": field.field_value,
+            } for field in patient.fields],
+        } for patient in patients]
+        
+        return {"success": True, "patients": results}, 200
+
+# Add the search endpoint to the API
+
+

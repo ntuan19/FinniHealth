@@ -1,7 +1,4 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
+
 
 import os, json
 
@@ -13,13 +10,14 @@ from .models import db
 
 app = Flask(__name__)
 
+app.secret_key = "#@$@$@$"
 app.config.from_object('api.config.BaseConfig')
-
+app.run(ssl_context=('cert.pem', 'key.pem'))
 db.init_app(app)
 rest_api.init_app(app)
-CORS(app)
-
+CORS(app,resources={r"/api/*": {"origins": "http://localhost:3000"}})
 # Setup database
+
 @app.before_first_request
 def initialize_database():
     try:

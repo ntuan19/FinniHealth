@@ -1,0 +1,104 @@
+/* styles.css */
+
+/* styles.css */
+
+.page_wrapper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Create three columns */
+    gap: 16px; /* Gap between grid items */
+    padding: 16px; /* Padding around the grid */
+}
+
+.patient_wrapper {
+    border: 1px solid #ccc; /* Border around each patient info block */
+    padding: 16px; /* Padding inside each block */
+    border-radius: 8px; /* Rounded corners */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.search-bar-wrapper {
+    width: 100%;
+}
+
+.button-wrapper {
+    align-self: flex-end;
+}
+
+
+
+
+/* ... other styles ... */
+
+.contentBox {
+    width: 300px; /* Adjust as needed */
+    height: 350px; /* Adjust as needed */
+    padding: 10% 10% 15% 10%; /* top right bottom left */
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  
+  
+  /* ... other styles ... */
+  
+/* styles.css */
+
+.patient_block {
+    background-color: #f4f4f9;
+    border: 1px solid #e0e0f0;
+    border-radius: 8px;
+    overflow-y: auto;
+    max-height: 400px;
+    padding: 16px;
+    margin: 16px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
+    position: relative;
+    padding-bottom: 50px; /* increased padding at the bottom */
+
+  }
+  
+  .patient_block:hover {
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .boldText {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+  }
+  
+  .address, .field {
+    margin-top: 8px;
+    padding-left: 16px;
+    color: #555;
+  }
+  
+  
+.editButton {
+    visibility: hidden;
+    position: absolute;
+    bottom: 10%; /* 10% from the bottom */
+    left: 50%; /* Center the button */
+    transform: translateX(-50%); /* Ensure it is centered */
+    background-color: #673AB7; /* Aesthetic purple */
+    color: #fff;
+    transition: visibility 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    border: none;
+    padding: 8px 16px; /* Adjust as needed */
+    border-radius: 4px; /* Adjust as needed */
+  }
+  
+  .editButton:hover {
+    background-color: #512DA8; /* Darker purple for hover effect */
+  }
+  
+  .patient_block:hover .editButton {
+    visibility: visible; /* changed from display: block; */
+  }
+  
+  

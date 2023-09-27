@@ -25,16 +25,17 @@ import {
 // third party
 import * as Yup from 'yup';
 import { Formik } from 'formik';
-
+import configData from '../../../../config';
 // project imports
 import useScriptRef from '../../../../hooks/useScriptRef';
 import Google from './../../../../assets/images/icons/social-google.svg';
 import AnimateButton from './../../../../ui-component/extended/AnimateButton';
 import { strengthColor, strengthIndicator } from '../../../../utils/password-strength';
-
+import { useHistory } from 'react-router';
 // assets
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
+import axios from 'axios';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -84,12 +85,25 @@ const FirebaseRegister = ({ ...others }) => {
     const customization = useSelector((state) => state.customization);
     const [showPassword, setShowPassword] = React.useState(false);
     const [checked, setChecked] = React.useState(true);
-
+    const history = useHistory();
     const [strength, setStrength] = React.useState(0);
     const [level, setLevel] = React.useState('');
-
     const googleHandler = async () => {
-        console.error('Register');
+        try {
+            const response = await axios.get(`${configData.API_SERVER}users/google_register`);
+            console.log(response)
+            if (response.data.success) {
+                window.location.href = "/user/login"
+            }
+            else{
+                console.log("Waiting")
+            }
+        } catch (error) {
+            console.error('Error during the API call', error);
+            // Redirect to the login page if the API call fails
+            window.location.href = '/api/users/login'; 
+        }
+
     };
 
     const handleClickShowPassword = () => {

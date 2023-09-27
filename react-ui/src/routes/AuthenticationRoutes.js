@@ -6,8 +6,8 @@ import Loadable from '../ui-component/Loadable';
 import MinimalLayout from './../layout/MinimalLayout';
 
 // login option 3 routing
-const AuthLogin3 = Loadable(lazy(() => import('../views/pages/authentication/authentication3/Login3')));
-const AuthRegister3 = Loadable(lazy(() => import('../views/pages/authentication/authentication3/Register3')));
+const AuthLogin = Loadable(lazy(() => import('../views/pages/authentication/authentication3/Login3')));
+const AuthRegister = Loadable(lazy(() => import('../views/pages/authentication/authentication3/Register3')));
 
 //-----------------------|| AUTHENTICATION ROUTING ||-----------------------//
 
@@ -15,11 +15,11 @@ const AuthenticationRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/pages/login/login3', '/pages/register/register3']}>
+        <Route path={['/user/login', '/user/register']}>
             <MinimalLayout>
                 <Switch location={location} key={location.pathname}>
-                    <Route path="/pages/login/login3" component={AuthLogin3} />
-                    <Route path="/pages/register/register3" component={AuthRegister3} />
+                    <Route path="/user/login" component={AuthLogin} />
+                    <Route path="/user/register" component={AuthRegister} />
                 </Switch>
             </MinimalLayout>
         </Route>
