@@ -119,9 +119,7 @@ const config = {
 
 <br />
 
-## ✨ API
 
-For a fast set up, this [POSTMAN](https://docs.appseed.us/boilerplate-code/api-server/api-unified-definition) definition can be used.
 
 > **Register** - `api/users/register` (**POST** request)
 
@@ -165,21 +163,3 @@ authorization: JWT_TOKEN (returned by Login request)
 ```
 
 <br />
-
-## ✨ Product UI
-
-> React Flask Authentication - Login 
-
-![React Flask Authentication - Login.](https://user-images.githubusercontent.com/51070104/141444378-763ca3fb-c18c-4558-9730-b42a341a7b22.jpg)
-
-<br />
-
-> React Flask Authentication - Icons
-
-![React Flask Authentication - Icons.](https://user-images.githubusercontent.com/51070104/141444472-8c966396-69dc-46c3-835e-b64329fdbf7d.jpg)
-
-<br />
-
-> React Flask Authentication - Colors
-
-![React Flask Authentication - Colors.](https://user-images.githubusercontent.com/51070104/141444532-46a3bcd0-841b-4725-aa82-122569cd678a.jpg)
