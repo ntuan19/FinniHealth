@@ -10,7 +10,6 @@ import Loadable from '../ui-component/Loadable';
 // login routing
 const AuthLogin = Loadable(lazy(() => import('../views/pages/authentication/login')));
 const AuthRegister = Loadable(lazy(() => import('../views/pages/authentication/register')));
-
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
 const LoginRoutes = () => {
