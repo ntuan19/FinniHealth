@@ -7,6 +7,9 @@ from flask_cors import CORS
 
 from .routes import rest_api
 from .models import db
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
@@ -15,7 +18,8 @@ app.config.from_object('api.config.BaseConfig')
 app.run(ssl_context=('cert.pem', 'key.pem'))
 db.init_app(app)
 rest_api.init_app(app)
-CORS(app,resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app, origins=["http://localhost:3000"])
+
 # Setup database
 
 @app.before_first_request

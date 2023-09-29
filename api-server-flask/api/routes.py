@@ -18,9 +18,11 @@ import requests
 import sqlite3
 from datetime import datetime
 from requests_oauthlib import OAuth2Session
-from flask_dance.contrib.google import make_google_blueprint
-rest_api = Api(version="1.0", title="Users API")
 from flask import session, redirect 
+rest_api = Api(version="1.0", title="Users API")
+
+
+
 """
     Flask-Restx models for api request and response data
 """
@@ -80,69 +82,61 @@ def token_required(f):
 
     return decorator
 
-
-def create_google_object():
-    # Register OAuth Blueprint
-    redirect_uri = "http://127.0.0.1:5000/api/users/google_callback"
-    google = OAuth2Session(BaseConfig.GOOGLE_CLIENT_ID, redirect_uri=redirect_uri,
-                       scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"])
-    print(BaseConfig.GOOGLE_CLIENT_ID)
-    return google
+def fetch_user(res):
+    data = res.json()
+    access_token = data.get("access_token")
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.get('https://openidconnect.googleapis.com/v1/userinfo', headers=headers)
     
+    if response.status_code != 200:
+        return False
+    
+    user_info = response.json()
+    google_id = user_info.get('sub')
+    name = user_info.get('name')
+    email = user_info.get('email')
 
-"""
-    Flask-Restx routes
-"""
+    print("Email, google", google_id,email)
 
-@rest_api.route("/api/users/google_register")
+    # Check if user is already registered
+    user = Users.query.filter_by(email=email).first()
+    print("User",user)
+    
+    if not user:
+        new_user = Users(google_id=google_id, name=name, email=email)
+        db.session.add(new_user)
+        db.session.commit()
+    return True 
+
+@rest_api.route("/api/users/oauth_google")
 class GoogleRegister(Resource):
-    def get(self):
-        print("It got here")
-        google = create_google_object()
-        authorization_base_url = 'https://accounts.google.com/o/oauth2/auth'
-        token_url = 'https://accounts.google.com/o/oauth2/token'
-        authorization_url, state = google.authorization_url(authorization_base_url)
-        session['oauth_state'] = state
-        return {"url":authorization_url}
+    def post(self):
+        data = request.get_json()
+        scope = data["scope"]
+        code = data["code"]
+        client_id = BaseConfig.GOOGLE_CLIENT_ID
+        client_secret = BaseConfig.GOOGLE_CLIENT_SECRET
+        redirect_uri = ""
+        payload = {
+        'code': code,
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'redirect_uri': "http://localhost:3000",
+        'grant_type': 'authorization_code'
+        }
+        call_for_token = requests.post('https://oauth2.googleapis.com/token', data=payload)
 
-@rest_api.route("/api/users/google_callback")
-class GoogleCallback(Resource):
-    def get(self):
-        if 'error' in request.args:
-            return {"success": False, "msg": request.args.get('error')}, 400
-        
-        google = create_google_object()
-        token = google.fetch_token('https://accounts.google.com/o/oauth2/token',
-                           authorization_response=request.url,
-                           client_secret=BaseConfig.GOOGLE_CLIENT_SECRET)
-        google_user_info = google.get('https://www.googleapis.com/oauth2/v1/userinfo').json()
-        email = google_user_info.get('email')
-        open_id = google_user_info.get("openid")
-        print(email,open_id)
-        # Check if user already exists
-        user_exists = Users.get_by_email(email)
-        if user_exists:
-            user = user_exists
-        else:
-            # Register the new user
-            username = google_user_info.get('name')
-            user = Users(username=username, email=email)
-            user.save()
-        
-        # Create JWT Token for user
-        token = jwt.encode({'email': email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
-        
-        # Set JWT Auth Active
-        user.set_jwt_auth_active(True)
-        user.save()
-        
-        return {"success": True,
-                "user": user.toJSON(),
-                "token": token}, 200
+        if call_for_token.status_code != 200:
+            return {"Status":"Failed"},400
+        if call_for_token.status_code == 200:
+            response = fetch_user(call_for_token)
+            if response == True:
+                return {"Status":"Registered/Ready to Login"},200
 
 
 
 
+   
 @rest_api.route('/api/users/register')
 class Register(Resource):
     """
