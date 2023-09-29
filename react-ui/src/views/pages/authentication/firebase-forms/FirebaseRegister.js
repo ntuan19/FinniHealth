@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-
 // material-ui
 import { makeStyles } from '@material-ui/styles';
 import {
@@ -31,11 +30,14 @@ import useScriptRef from '../../../../hooks/useScriptRef';
 import Google from './../../../../assets/images/icons/social-google.svg';
 import AnimateButton from './../../../../ui-component/extended/AnimateButton';
 import { strengthColor, strengthIndicator } from '../../../../utils/password-strength';
-import { useHistory } from 'react-router';
+import { useHistory } from 'react-router-dom';
 // assets
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import axios from 'axios';
+import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
+import { useState } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -78,6 +80,41 @@ const useStyles = makeStyles((theme) => ({
 
 //===========================|| FIREBASE - REGISTER ||===========================//
 
+
+
+
+function LoginButton() {
+    const history = useHistory()
+    const login = useGoogleLogin({
+        onSuccess: tokenResponse => {
+          console.log(tokenResponse);
+    
+          // Send the tokenResponse to the server
+          axios.post(`${configData.API_SERVER}users/oauth_google`, tokenResponse)
+            .then(response => {
+                console.log(response.status)
+                if(response.status!==200){
+                    console.log("Server Internal Error",response.status)
+                }
+                else{
+                    history.push('/dashboard/default')
+                }
+                console.log('Data sent to the server successfully', response.data);
+            })
+            .catch(error => {
+              console.error('Error sending data to the server', error);
+            });
+        },
+        flow: 'auth-code',
+      });
+    
+      return (
+        <Button onClick={() => login()}>
+          Sign up with Google 🚀
+        </Button>
+      )
+};
+
 const FirebaseRegister = ({ ...others }) => {
     const classes = useStyles();
     const scriptedRef = useScriptRef();
@@ -88,23 +125,6 @@ const FirebaseRegister = ({ ...others }) => {
     const history = useHistory();
     const [strength, setStrength] = React.useState(0);
     const [level, setLevel] = React.useState('');
-    const googleHandler = async () => {
-        try {
-            const response = await axios.get(`${configData.API_SERVER}users/google_register`);
-            console.log(response)
-            if (response.data.success) {
-                window.location.href = "/user/login"
-            }
-            else{
-                console.log("Waiting")
-            }
-        } catch (error) {
-            console.error('Error during the API call', error);
-            // Redirect to the login page if the API call fails
-            window.location.href = '/api/users/login'; 
-        }
-
-    };
 
     const handleClickShowPassword = () => {
         setShowPassword(!showPassword);
@@ -129,17 +149,9 @@ const FirebaseRegister = ({ ...others }) => {
             <Grid container direction="column" justifyContent="center" spacing={2}>
                 <Grid item xs={12}>
                     <AnimateButton>
-                        <Button
-                            disableElevation
-                            fullWidth={true}
-                            className={classes.redButton}
-                            onClick={googleHandler}
-                            size="large"
-                            variant="contained"
-                        >
-                            <img src={Google} alt="google" width="20px" sx={{ mr: { xs: 1, sm: 2 } }} className={classes.loginIcon} /> Sign
-                            up with Google
-                        </Button>
+                        <GoogleOAuthProvider clientId='448343539406-3kd92ldvadt3tasku71s8eoe6leml6re.apps.googleusercontent.com'>
+                           <LoginButton/>
+                        </GoogleOAuthProvider>
                     </AnimateButton>
                 </Grid>
                 <Grid item xs={12}>
