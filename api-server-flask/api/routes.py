@@ -85,28 +85,29 @@ def token_required(f):
 def fetch_user(res):
     data = res.json()
     access_token = data.get("access_token")
+    print("Access token",access_token)
     headers = {'Authorization': f'Bearer {access_token}'}
     response = requests.get('https://openidconnect.googleapis.com/v1/userinfo', headers=headers)
     
     if response.status_code != 200:
-        return False
+        return {"status":False,"token":None,"user":None}
     
     user_info = response.json()
     google_id = user_info.get('sub')
-    name = user_info.get('name')
     email = user_info.get('email')
-
-    print("Email, google", google_id,email)
+    user_name = email.split("@")[0]
 
     # Check if user is already registered
     user = Users.query.filter_by(email=email).first()
-    print("User",user)
-    
     if not user:
-        new_user = Users(google_id=google_id, name=name, email=email)
-        db.session.add(new_user)
+        user = Users( oauth_user_id=google_id, email=email,username=user_name)
+        db.session.add(user)
         db.session.commit()
-    return True 
+    
+    token = jwt.encode({"email": email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
+    user.set_jwt_auth_active(True)
+    user.save()
+    return {"status":True,"token":token,"user":user.toJSON()}
 
 @rest_api.route("/api/users/oauth_google")
 class GoogleRegister(Resource):
@@ -125,18 +126,18 @@ class GoogleRegister(Resource):
         'grant_type': 'authorization_code'
         }
         call_for_token = requests.post('https://oauth2.googleapis.com/token', data=payload)
-
-        if call_for_token.status_code != 200:
-            return {"Status":"Failed"},400
+        print("Call_for_token",call_for_token)
         if call_for_token.status_code == 200:
             response = fetch_user(call_for_token)
-            if response == True:
-                return {"Status":"Registered/Ready to Login"},200
+            print("Response", response["status"],response["token"],response["user"])
+            if response["status"] == True and response["token"]:
+                print("OKE", response["token"])
+                return {"status":True,"token":response["token"],"user":response["user"]},200
+        return {"status":False,"token":None,"user":None},400
+            
+               
+                
 
-
-
-
-   
 @rest_api.route('/api/users/register')
 class Register(Resource):
     """
