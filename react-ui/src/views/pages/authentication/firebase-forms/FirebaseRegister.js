@@ -38,6 +38,8 @@ import axios from 'axios';
 import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
 import { useState } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { useDispatch } from 'react-redux';
+import { ACCOUNT_INITIALIZE } from './../../../../store/actions';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -80,39 +82,42 @@ const useStyles = makeStyles((theme) => ({
 
 //===========================|| FIREBASE - REGISTER ||===========================//
 
+const LoginButton = () => {
+    const history = useHistory();
+    const dispatcher = useDispatch();
 
+    const handleSuccess = async (tokenResponse) => {
+        console.log(tokenResponse);
+        try {
+            console.log('tokenResdata', tokenResponse.data);
+            const response = await axios.post(`${configData.API_SERVER}users/oauth_google`, tokenResponse);
+            const data_retrieve = response.data;
+            console.log('DATA', data_retrieve.status, data_retrieve.token);
+            console.log('Reached here');
 
+            if (data_retrieve.status && data_retrieve.token) {
+                console.log('HERE AGAIN, DISPATCH');
+                dispatcher({
+                    type: ACCOUNT_INITIALIZE,
+                    payload: { isLoggedIn: true, user: data_retrieve.user, token: data_retrieve.token }
+                });
 
-function LoginButton() {
-    const history = useHistory()
+                history.push('/dashboard/default');
+            } 
+        } catch (error) {
+            if (error.response && error.response.status !== 200) {
+                console.error('Server Internal Error', error.response.status);
+            } else {
+                console.error('Error sending data to the server', error);
+            }
+        }
+    };
     const login = useGoogleLogin({
-        onSuccess: tokenResponse => {
-          console.log(tokenResponse);
-    
-          // Send the tokenResponse to the server
-          axios.post(`${configData.API_SERVER}users/oauth_google`, tokenResponse)
-            .then(response => {
-                console.log(response.status)
-                if(response.status!==200){
-                    console.log("Server Internal Error",response.status)
-                }
-                else{
-                    history.push('/dashboard/default')
-                }
-                console.log('Data sent to the server successfully', response.data);
-            })
-            .catch(error => {
-              console.error('Error sending data to the server', error);
-            });
-        },
-        flow: 'auth-code',
-      });
-    
-      return (
-        <Button onClick={() => login()}>
-          Sign up with Google 🚀
-        </Button>
-      )
+        onSuccess: handleSuccess,
+        flow: 'auth-code'
+    });
+
+    return <Button onClick={() => login()}>Sign up with Google 🚀</Button>;
 };
 
 const FirebaseRegister = ({ ...others }) => {
@@ -149,8 +154,8 @@ const FirebaseRegister = ({ ...others }) => {
             <Grid container direction="column" justifyContent="center" spacing={2}>
                 <Grid item xs={12}>
                     <AnimateButton>
-                        <GoogleOAuthProvider clientId='448343539406-3kd92ldvadt3tasku71s8eoe6leml6re.apps.googleusercontent.com'>
-                           <LoginButton/>
+                        <GoogleOAuthProvider clientId="448343539406-3kd92ldvadt3tasku71s8eoe6leml6re.apps.googleusercontent.com">
+                            <LoginButton />
                         </GoogleOAuthProvider>
                     </AnimateButton>
                 </Grid>
