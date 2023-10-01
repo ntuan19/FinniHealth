@@ -11,7 +11,9 @@ import Logo from './../../../../ui-component/Logo';
 import AuthCardWrapper from './../AuthCardWrapper';
 import RestLogin from './RestLogin';
 import AuthFooter from './../../../../ui-component/cards/AuthFooter';
-
+import AnimateButton from '../../../../ui-component/extended/AnimateButton';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { LoginButton } from './googleButton';
 // assets
 
 //================================|| LOGIN MAIN ||================================//
@@ -23,11 +25,13 @@ const Login = () => {
     return (
         <AuthWrapper1>
             <Grid container direction="column" justifyContent="flex-end" sx={{ minHeight: '100vh' }}>
+                
                 <Grid item xs={12}>
                     <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 'calc(100vh - 68px)' }}>
                         <Grid item sx={{ m: { xs: 1, sm: 3 }, mb: 0 }}>
                             <AuthCardWrapper>
                                 <Grid container spacing={2} alignItems="center" justifyContent="center">
+                               
                                     <Grid item sx={{ mb: 3 }}>
                                         <RouterLink to="#">
                                             <Logo />
@@ -42,15 +46,27 @@ const Login = () => {
                                         >
                                             <Grid item>
                                                 <Stack alignItems="center" justifyContent="center" spacing={1}>
+                                               
+                                                
+
                                                     <Typography
                                                         color={theme.palette.secondary.main}
                                                         gutterBottom
                                                         variant={matchDownSM ? 'h3' : 'h2'}
                                                     >
-                                                        Hi, Welcome Back
+                                                        Welcome To Finni Health 
                                                     </Typography>
+
+                                                    <Grid>
+                                                <AnimateButton>
+                                                <GoogleOAuthProvider clientId="448343539406-3kd92ldvadt3tasku71s8eoe6leml6re.apps.googleusercontent.com">
+                                                <LoginButton textInfor={"Sign In with Google"}/>
+                                                </GoogleOAuthProvider>
+                                                </AnimateButton>
+                                                    
+                                                </Grid>
                                                     <Typography variant="caption" fontSize="16px" textAlign={matchDownSM ? 'center' : ''}>
-                                                        Enter your credentials to continue
+                                                        Or enter your credentials to continue
                                                     </Typography>
                                                 </Stack>
                                             </Grid>

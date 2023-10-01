@@ -11,6 +11,9 @@ import AuthCardWrapper from './../AuthCardWrapper';
 import Logo from './../../../../ui-component/Logo';
 import RestRegister from './RestRegister';
 import AuthFooter from './../../../../ui-component/cards/AuthFooter';
+import AnimateButton from '../../../../ui-component/extended/AnimateButton';
+import { LoginButton } from '../login/googleButton';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // assets
 
@@ -49,6 +52,13 @@ const Register = () => {
                                                     >
                                                         Sign up
                                                     </Typography>
+                                                    <Grid>
+                                                     <AnimateButton>
+                                                         <GoogleOAuthProvider clientId="448343539406-3kd92ldvadt3tasku71s8eoe6leml6re.apps.googleusercontent.com">
+                                                           <LoginButton textInfor={"Sign Up with Google"}/>
+                                                         </GoogleOAuthProvider>
+                                                     </AnimateButton>
+                                                    </Grid>
                                                     <Typography variant="caption" fontSize="16px" textAlign={matchDownSM ? 'center' : ''}>
                                                         Enter your credentials to continue
                                                     </Typography>
