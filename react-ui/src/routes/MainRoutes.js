@@ -9,7 +9,6 @@ import AuthGuard from './../utils/route-guard/AuthGuard';
 // dashboard routing
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard/Default')));
 
-// utilities routing
 
 const PatientDataComponent = Loadable(lazy(() => import('../views/patient_dashboard/datacomponent')))
 // sample page routing

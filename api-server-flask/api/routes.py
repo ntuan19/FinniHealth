@@ -57,11 +57,13 @@ def token_required(f):
             token = request.headers["authorization"]
 
         if not token:
+            print("Not Token")
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
 
         try:
             data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
             current_user = Users.get_by_email(data["email"])
+            print("current user", current_user)
 
             if not current_user:
                 return {"success": False,
@@ -85,7 +87,6 @@ def token_required(f):
 def fetch_user(res):
     data = res.json()
     access_token = data.get("access_token")
-    print("Access token",access_token)
     headers = {'Authorization': f'Bearer {access_token}'}
     response = requests.get('https://openidconnect.googleapis.com/v1/userinfo', headers=headers)
     
@@ -117,7 +118,6 @@ class GoogleRegister(Resource):
         code = data["code"]
         client_id = BaseConfig.GOOGLE_CLIENT_ID
         client_secret = BaseConfig.GOOGLE_CLIENT_SECRET
-        redirect_uri = ""
         payload = {
         'code': code,
         'client_id': client_id,
@@ -189,7 +189,7 @@ class Login(Resource):
 
         # create access token uwing JWT
         token = jwt.encode({'email': _email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
-
+        print(token)
         user_exists.set_jwt_auth_active(True)
         user_exists.save()
 
@@ -245,7 +245,7 @@ class LogoutUser(Resource):
 
 @rest_api.route("/api/users/add_patient",methods=["POST"])
 class UserPatient(Resource):
-    @token_required
+    # @token_required
     def post(self):
         req_data = request.get_json()
         name = req_data["name"]
@@ -256,10 +256,8 @@ class UserPatient(Resource):
         addresses = req_data["addresses"]
         field_data = req_data["fields"]
         print(name,date_object,status)
-        print("success getting data")
         new_patient = Patient(name=name, dob=date_object,status = status)
         print(new_patient.id)
-        print("success adding patient infor")
         new_patient.save()        
         # Commit the session to get the id for the new patient
         
@@ -285,7 +283,7 @@ class UserPatient(Resource):
 
 @rest_api.route("/api/users/update_patient/<int:patient_id>")
 class UpdatePatient(Resource):
-    @token_required
+    # @token_required
     def put(self, patient_id):
         # Fetch the patient by id from the database
         patient = Patient.query.get(patient_id)
@@ -355,7 +353,7 @@ class UpdatePatient(Resource):
 
 @rest_api.route("/api/users/get_patient/<int:patient_id>")
 class PatientInformation(Resource):
-    @token_required
+    # @token_required
     def get(self, patient_id):
         # Query the database to get the patient by ID
         patient = Patient.query.get(patient_id)

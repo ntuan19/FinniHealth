@@ -31,7 +31,6 @@ import axios from 'axios';
 // project imports
 import MainCard from '../../../../ui-component/cards/MainCard';
 import Transitions from '../../../../ui-component/extended/Transitions';
-import UpgradePlanCard from './UpgradePlanCard';
 import { LOGOUT } from './../../../../store/actions';
 
 // assets
@@ -242,7 +241,6 @@ const ProfileSection = () => {
                                         />
                                         <Divider />
                                         <PerfectScrollbar className={classes.ScrollHeight}>
-                                            <UpgradePlanCard />
                                             <Divider />
                                             <Card className={classes.card}>
                                                 <CardContent>

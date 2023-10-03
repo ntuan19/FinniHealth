@@ -3,7 +3,7 @@ import axios from 'axios';
 import configData from "../../../../config";
 import { useHistory } from 'react-router';
 import { useDispatch } from 'react-redux';
-import { ACCOUNT_INITIALIZE } from './../../../../store/actions';
+import { ACCOUNT_INITIALIZE, LOGIN } from './../../../../store/actions';
 import { useGoogleLogin } from "@react-oauth/google";
 import Button from '@material-ui/core/Button';
 import { makeStyles } from '@material-ui/styles';
@@ -59,7 +59,7 @@ export const LoginButton = ({ textInfor }) => {
             const data_retrieve = response.data;
             if (data_retrieve.status && data_retrieve.token) {
                 dispatcher({
-                    type: ACCOUNT_INITIALIZE,
+                    type: LOGIN,
                     payload: {
                         isLoggedIn: true,
                         user: data_retrieve.user,

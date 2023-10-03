@@ -6,6 +6,8 @@ import { Card, CardContent, Typography, Box, Button } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import AddPatientButton from './button';
 import SearchBar from './searchbar';
+import { useSelector } from 'react-redux';
+
 
 function ListInfoEdit({ listInfo, onChange, index }) {
     return (
@@ -125,9 +127,11 @@ function Patient({ patient, onUpdate }) {
 export default function PatientDataComponent(addPatient,searchPatient) {
     const [patientData, setPatientData] = useState([]);
 
+
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // const token = 
                 const response = await axios.get(configData.API_SERVER + 'users/dashboard');
                 if (response.data.status_code === 200) {
                     const rawData = response.data.patients;
