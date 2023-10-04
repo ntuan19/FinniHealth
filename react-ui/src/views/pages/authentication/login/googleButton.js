@@ -59,13 +59,11 @@ export const LoginButton = ({ textInfor }) => {
             const data_retrieve = response.data;
             if (data_retrieve.status && data_retrieve.token) {
                 dispatcher({
-                    type: LOGIN,
-                    payload: {
-                        isLoggedIn: true,
-                        user: data_retrieve.user,
-                        token: data_retrieve.token
-                    }
-                });
+                    type: ACCOUNT_INITIALIZE,
+                    payload: { isLoggedIn: true, user: response.data.user, token: response.data.token }
+
+                }
+                );
                 history.push('/dashboard/default');
             }
         } catch (error) {

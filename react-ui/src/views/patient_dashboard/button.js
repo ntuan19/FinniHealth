@@ -15,9 +15,11 @@ import {
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from 'react-redux';
 
 
 function FormComponent({ onHide }) {
+    const account = useSelector((state) => state.account);
     const [formData, setFormData] = useState({
         name: ' ',
         dob: ' ',
@@ -92,7 +94,7 @@ function FormComponent({ onHide }) {
         if (!confirm) return;
 
         try {
-            const response = await axios.post(configData.API_SERVER + "users/add_patient", formData);
+            const response = await axios.post(configData.API_SERVER + "users/add_patient", formData,{ headers: { "Authorization": `${account.token}` } });
             setApiResponse('Success');
             onHide();
         } catch (error) {

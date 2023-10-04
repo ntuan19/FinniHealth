@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-app.secret_key = "#@$@$@$"
 app.config.from_object('api.config.BaseConfig')
 app.run(ssl_context=('cert.pem', 'key.pem'))
 db.init_app(app)

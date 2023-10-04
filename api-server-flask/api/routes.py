@@ -57,31 +57,20 @@ def token_required(f):
             token = request.headers["authorization"]
 
         if not token:
-            print("Not Token")
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
-
-        try:
-            data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
-            current_user = Users.get_by_email(data["email"])
-            print("current user", current_user)
-
-            if not current_user:
-                return {"success": False,
-                        "msg": "Sorry. Wrong auth token. This user does not exist."}, 400
-
-            token_expired = db.session.query(JWTTokenBlocklist.id).filter_by(jwt_token=token).scalar()
-
-            if token_expired is not None:
+        
+        data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
+        email_data = data["email"]
+        user = Users.get_by_email(email=email_data)
+        print("Hello here ", user)
+        token_expired = db.session.query(JWTTokenBlocklist.id).filter_by(jwt_token=token).scalar()
+        if token_expired is not None:
                 return {"success": False, "msg": "Token revoked."}, 400
 
-            if not current_user.check_jwt_auth_active():
+        if not user.check_jwt_auth_active():
                 return {"success": False, "msg": "Token expired."}, 400
 
-        except:
-            return {"success": False, "msg": "Token is invalid"}, 400
-
-        return f(current_user, *args, **kwargs)
-
+        return f(user, *args, **kwargs)
     return decorator
 
 def fetch_user(res):
@@ -92,20 +81,22 @@ def fetch_user(res):
     
     if response.status_code != 200:
         return {"status":False,"token":None,"user":None}
-    
     user_info = response.json()
+    print(user_info)
     google_id = user_info.get('sub')
-    email = user_info.get('email')
-    user_name = email.split("@")[0]
+    _email = user_info.get('email')
+    user_name = _email.split("@")[0]
 
     # Check if user is already registered
-    user = Users.query.filter_by(email=email).first()
+    user = Users.query.filter_by(email=_email).first()
+
+       
     if not user:
-        user = Users( oauth_user_id=google_id, email=email,username=user_name)
-        db.session.add(user)
-        db.session.commit()
-    
-    token = jwt.encode({"email": email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
+        user = Users( oauth_user_id=google_id, email=_email,username=user_name)
+        # user = Users(email=_email)
+        user.save()
+
+    token = jwt.encode({"email": _email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
     user.set_jwt_auth_active(True)
     user.save()
     return {"status":True,"token":token,"user":user.toJSON()}
@@ -129,7 +120,7 @@ class GoogleRegister(Resource):
         if call_for_token.status_code == 200:
             response = fetch_user(call_for_token)
             if response["status"] == True and response["token"]:
-                return {"status":True,"token":response["token"],"user":response["user"]},200
+                return {"status":True,"token":response["token"],"user":response["user"]["email"]},200
         return {"status":False,"token":None,"user":None},400
             
 
@@ -149,11 +140,12 @@ class Register(Resource):
         _password = req_data.get("password")
 
         user_exists = Users.get_by_email(_email)
+        print(user_exists)
         if user_exists:
             return {"success": False,
                     "msg": "Email already taken"}, 400
 
-        new_user = Users(username=_username, email=_email)
+        new_user = Users(email=_email)
 
         new_user.set_password(_password)
         new_user.save()
@@ -189,7 +181,6 @@ class Login(Resource):
 
         # create access token uwing JWT
         token = jwt.encode({'email': _email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
-        print(token)
         user_exists.set_jwt_auth_active(True)
         user_exists.save()
 
@@ -255,9 +246,7 @@ class UserPatient(Resource):
         status = req_data["status"]
         addresses = req_data["addresses"]
         field_data = req_data["fields"]
-        print(name,date_object,status)
         new_patient = Patient(name=name, dob=date_object,status = status)
-        print(new_patient.id)
         new_patient.save()        
         # Commit the session to get the id for the new patient
         
@@ -387,8 +376,9 @@ class PatientInformation(Resource):
 @rest_api.route("/api/users/dashboard")
 class Dashboard(Resource):
     @token_required
-    def get(self):
+    def get(self,user):
         # Connect to the SQLite database
+        print("Should be here")
         db_path = "/Users/ntuan_195/react-flask-authentication/api-server-flask/api/db.sqlite3"
         conn = sqlite3.connect(db_path)
         # Create a cursor object to execute SQL queries
