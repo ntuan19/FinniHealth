@@ -9,6 +9,7 @@ import SearchBar from './searchbar';
 import { useSelector } from 'react-redux';
 import {store} from "/Users/ntuan_195/react-flask-authentication/react-ui/src/store/index.js";
 
+
 function ListInfoEdit({ listInfo, onChange, index }) {
     return (
         <div>
@@ -127,46 +128,114 @@ function Patient({ patient, onUpdate }) {
     );
 }
 
-export default function PatientDataComponent(addPatient,searchPatient) {
-    const [patientData, setPatientData] = useState([]);
-    const account = useSelector((state) => state.account);
-    console.log("Token retrieved from", account.token)
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await axios.get(configData.API_SERVER + 'users/dashboard',{ headers: { "Authorization": `${account.token}` } });
-                if (response.data.status_code === 200) {
-                    const rawData = response.data.patients;
-                    const arrayPatientData = Object.values(rawData);
-                    setPatientData(arrayPatientData);
-                } else {
-                    console.error('Error fetching patients, status_code', response.data.status_code);
-                }
-            } catch (error) {
-                console.log('Error fetching data', error);
-            }
-        };
-        fetchData();
-    }, [searchPatient,addPatient]);
+// export default function PatientDataComponent({addPatient,searchPatient}) {
+//     const [patientData, setPatientData] = useState([]);
 
+//     const account = useSelector((state) => state.account);
+    
+//     useEffect(() => {
+//         const fetchData = async () => {
+//             try {
+//                 const response = await axios.get(configData.API_SERVER + 'users/dashboard',{ headers: { "Authorization": `${account.token}` } });
+//                 if (response.data.status_code === 200) {
+//                     const rawData = response.data.patients;
+//                     const arrayPatientData = Object.values(rawData);
+//                     setPatientData(arrayPatientData);
+//                 } else {
+//                     console.error('Error fetching patients, status_code', response.data.status_code);
+//                 }
+//             } catch (error) {
+//                 console.log('Error fetching data', error);
+//             }
+//         };
+//         fetchData();
+//     }, [searchPatient,addPatient]);
+
+//     const handleUpdate = (updatedPatient) => {
+//         setPatientData((prevState) => prevState.map((patient) => (patient.id === updatedPatient.id ? updatedPatient : patient)));
+//     };
+
+//     return (
+//         <div className="container">
+//         <div className="button-wrapper">
+//             <AddPatientButton />
+//         </div>
+//         <div className="page_wrapper">
+//             {patientData.map((patient) => (
+//                 <Patient key={patient.id} patient={patient} onUpdate={handleUpdate} />
+//             ))}
+//         </div>
+//          </div>
+       
+//     );
+// }
+function PatientDataComponent({ addPatient }) {
+    const [patientData, setPatientData] = useState([]);
+    const [searchResults, setSearchResults] = useState([]);
+    const account = useSelector((state) => state.account);
+  
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const response = await axios.get(configData.API_SERVER + 'users/dashboard', {
+            headers: { Authorization: `${account.token}` },
+          });
+          if (response.data.status_code === 200) {
+            const rawData = response.data.patients;
+            const arrayPatientData = Object.values(rawData);
+            setPatientData(arrayPatientData);
+          } else {
+            console.error('Error fetching patients, status_code', response.data.status_code);
+          }
+        } catch (error) {
+          console.log('Error fetching data', error);
+        }
+      };
+      fetchData();
+    }, [addPatient]);
+  
+    const handleSearch = (results) => {
+      setSearchResults(results);
+    };
     const handleUpdate = (updatedPatient) => {
         setPatientData((prevState) => prevState.map((patient) => (patient.id === updatedPatient.id ? updatedPatient : patient)));
+            };
+  
+    const dataToDisplay = searchResults.length > 0 ? searchResults : patientData;
+    const containerStyle = {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%'
     };
-
+    
+    const searchBarAndButtonContainerStyle = {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%'
+    };
+    
+    const searchBarWrapperStyle = {
+        flex: 1,
+        marginRight: '20px' // gives some space between the search bar and the button
+    };
+    
     return (
-        <div className="container">
-        <div className="search-bar-wrapper">
-            <SearchBar />
-        </div>
-        <div className="button-wrapper">
+        <div style={containerStyle}>
+        <div style={searchBarAndButtonContainerStyle}>
+            <div style={searchBarWrapperStyle}>
+                <SearchBar onSearch={handleSearch}/>
+            </div>
             <AddPatientButton />
         </div>
+        
         <div className="page_wrapper">
-            {patientData.map((patient) => (
+            {dataToDisplay.map((patient) => (
                 <Patient key={patient.id} patient={patient} onUpdate={handleUpdate} />
             ))}
         </div>
-         </div>
-       
+    </div>
+     
     );
-}
+  }
+export default PatientDataComponent;
