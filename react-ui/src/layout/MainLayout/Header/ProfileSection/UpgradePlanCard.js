@@ -53,43 +53,42 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-//-----------------------|| PROFILE MENU - UPGRADE PLAN CARD ||-----------------------//
 
 const UpgradePlanCard = () => {
     const classes = useStyles();
 
     return (
         <Card className={classes.card}>
-            <CardContent>
-                <Grid container direction="column" spacing={2}>
-                    <Grid item>
-                        <Typography variant="h4">
-                            React Flask API Berry
-                        </Typography>
-                    </Grid>
-                    <Grid item>
-                        <Typography variant="subtitle2" className={classes.tagLine}>
-                            Open-source full-stack seed project.
-                        </Typography>
-                    </Grid>
-                    <Grid item>
-                        <Stack direction="row">
-                            <AnimateButton>
-                                <Button
-                                    component={Link}
-                                    href="https://appseed.us/product/berry-dashboard/api-server-flask/react/"
-                                    target="_blank"
-                                    variant="contained"
-                                    className={classes.button}
-                                >
-                                    See Product
-                                </Button>                                
-                            </AnimateButton>
-                        </Stack>
-                    </Grid>
-                </Grid>
-            </CardContent>
         </Card>
+        //     <CardContent>
+        //         <Grid container direction="column" spacing={2}>
+        //             <Grid item>
+        //                 <Typography variant="h4">
+        //                     React Flask API Berry
+        //                 </Typography>
+        //             </Grid>
+        //             <Grid item>
+        //                 <Typography variant="subtitle2" className={classes.tagLine}>
+        //                     Open-source full-stack seed project.
+        //                 </Typography>
+        //             </Grid>
+        //             <Grid item>
+        //                 <Stack direction="row">
+        //                     <AnimateButton>
+        //                         <Button
+        //                             component={Link}
+        //                             href="https://appseed.us/product/berry-dashboard/api-server-flask/react/"
+        //                             target="_blank"
+        //                             variant="contained"
+        //                             className={classes.button}
+        //                         >
+        //                             See Product
+        //                         </Button>                                
+        //                     </AnimateButton>
+        //                 </Stack>
+        //             </Grid>
+        //         </Grid>
+        //     </CardContent>
     );
 };
 

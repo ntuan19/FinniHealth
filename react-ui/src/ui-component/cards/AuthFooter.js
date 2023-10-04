@@ -8,11 +8,10 @@ import { Link, Typography, Stack } from '@material-ui/core';
 const AuthFooter = () => {
     return (
         <Stack direction="row" justifyContent="space-between">
-            <Typography variant="subtitle2" component={Link} href="https://berrydashboard.io" target="_blank" underline="hover">
-                berrydashboard.io
+            <Typography variant="subtitle2" component={Link} href="" target="_blank" underline="hover">
+                Finni Health 
             </Typography>
-            <Typography variant="subtitle2" component={Link} href="https://codedthemes.com" target="_blank" underline="hover">
-                &copy; codedthemes.com
+            <Typography variant="subtitle2" component={Link} href="" target="_blank" underline="hover">
             </Typography>
         </Stack>
     );

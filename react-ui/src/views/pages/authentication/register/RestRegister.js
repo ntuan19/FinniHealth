@@ -312,7 +312,7 @@ const RestRegister = ({ ...others }) => {
                                     variant="contained"
                                     color="secondary"
                                 >
-                                    Sign UP
+                                    Sign Up
                                 </Button>
                             </AnimateButton>
                         </Box>

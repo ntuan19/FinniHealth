@@ -6,6 +6,8 @@ import { Card, CardContent, Typography, Box, Button } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import AddPatientButton from './button';
 import SearchBar from './searchbar';
+import { useSelector } from 'react-redux';
+import {store} from "/Users/ntuan_195/react-flask-authentication/react-ui/src/store/index.js";
 
 function ListInfoEdit({ listInfo, onChange, index }) {
     return (
@@ -22,10 +24,13 @@ function ListInfoEdit({ listInfo, onChange, index }) {
 
 function PatientEdit({ patient, onSave }) {
     const [editedPatient, setEditedPatient] = useState(patient);
+    const currentState = store.getState();
+    const account = useSelector((state) => state.account);
 
+    
     const handleSave = async () => {
         try {
-            const response = await axios.put(`${configData.API_SERVER}users/update_patient/${editedPatient.id}`, editedPatient);
+            const response = await axios.put(`${configData.API_SERVER}users/update_patient/${editedPatient.id}`, editedPatient,{ headers: { "Authorization": `${account.token}` } });
             if (response.data.success) {
                 onSave(editedPatient);
             } else {
@@ -124,11 +129,12 @@ function Patient({ patient, onUpdate }) {
 
 export default function PatientDataComponent(addPatient,searchPatient) {
     const [patientData, setPatientData] = useState([]);
-
+    const account = useSelector((state) => state.account);
+    console.log("Token retrieved from", account.token)
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get(configData.API_SERVER + 'users/dashboard');
+                const response = await axios.get(configData.API_SERVER + 'users/dashboard',{ headers: { "Authorization": `${account.token}` } });
                 if (response.data.status_code === 200) {
                     const rawData = response.data.patients;
                     const arrayPatientData = Object.values(rawData);

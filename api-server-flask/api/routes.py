@@ -58,53 +58,45 @@ def token_required(f):
 
         if not token:
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
-
-        try:
-            data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
-            current_user = Users.get_by_email(data["email"])
-
-            if not current_user:
-                return {"success": False,
-                        "msg": "Sorry. Wrong auth token. This user does not exist."}, 400
-
-            token_expired = db.session.query(JWTTokenBlocklist.id).filter_by(jwt_token=token).scalar()
-
-            if token_expired is not None:
+        
+        data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
+        email_data = data["email"]
+        user = Users.get_by_email(email=email_data)
+        print("Hello here ", user)
+        token_expired = db.session.query(JWTTokenBlocklist.id).filter_by(jwt_token=token).scalar()
+        if token_expired is not None:
                 return {"success": False, "msg": "Token revoked."}, 400
 
-            if not current_user.check_jwt_auth_active():
+        if not user.check_jwt_auth_active():
                 return {"success": False, "msg": "Token expired."}, 400
 
-        except:
-            return {"success": False, "msg": "Token is invalid"}, 400
-
-        return f(current_user, *args, **kwargs)
-
+        return f(user, *args, **kwargs)
     return decorator
 
 def fetch_user(res):
     data = res.json()
     access_token = data.get("access_token")
-    print("Access token",access_token)
     headers = {'Authorization': f'Bearer {access_token}'}
     response = requests.get('https://openidconnect.googleapis.com/v1/userinfo', headers=headers)
     
     if response.status_code != 200:
         return {"status":False,"token":None,"user":None}
-    
     user_info = response.json()
+    print(user_info)
     google_id = user_info.get('sub')
-    email = user_info.get('email')
-    user_name = email.split("@")[0]
+    _email = user_info.get('email')
+    user_name = _email.split("@")[0]
 
     # Check if user is already registered
-    user = Users.query.filter_by(email=email).first()
+    user = Users.query.filter_by(email=_email).first()
+
+       
     if not user:
-        user = Users( oauth_user_id=google_id, email=email,username=user_name)
-        db.session.add(user)
-        db.session.commit()
-    
-    token = jwt.encode({"email": email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
+        user = Users( oauth_user_id=google_id, email=_email,username=user_name)
+        # user = Users(email=_email)
+        user.save()
+
+    token = jwt.encode({"email": _email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
     user.set_jwt_auth_active(True)
     user.save()
     return {"status":True,"token":token,"user":user.toJSON()}
@@ -117,7 +109,6 @@ class GoogleRegister(Resource):
         code = data["code"]
         client_id = BaseConfig.GOOGLE_CLIENT_ID
         client_secret = BaseConfig.GOOGLE_CLIENT_SECRET
-        redirect_uri = ""
         payload = {
         'code': code,
         'client_id': client_id,
@@ -126,17 +117,12 @@ class GoogleRegister(Resource):
         'grant_type': 'authorization_code'
         }
         call_for_token = requests.post('https://oauth2.googleapis.com/token', data=payload)
-        print("Call_for_token",call_for_token)
         if call_for_token.status_code == 200:
             response = fetch_user(call_for_token)
-            print("Response", response["status"],response["token"],response["user"])
             if response["status"] == True and response["token"]:
-                print("OKE", response["token"])
-                return {"status":True,"token":response["token"],"user":response["user"]},200
+                return {"status":True,"token":response["token"],"user":response["user"]["email"]},200
         return {"status":False,"token":None,"user":None},400
             
-               
-                
 
 @rest_api.route('/api/users/register')
 class Register(Resource):
@@ -154,11 +140,12 @@ class Register(Resource):
         _password = req_data.get("password")
 
         user_exists = Users.get_by_email(_email)
+        print(user_exists)
         if user_exists:
             return {"success": False,
                     "msg": "Email already taken"}, 400
 
-        new_user = Users(username=_username, email=_email)
+        new_user = Users(email=_email)
 
         new_user.set_password(_password)
         new_user.save()
@@ -194,7 +181,6 @@ class Login(Resource):
 
         # create access token uwing JWT
         token = jwt.encode({'email': _email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
-
         user_exists.set_jwt_auth_active(True)
         user_exists.save()
 
@@ -248,54 +234,6 @@ class LogoutUser(Resource):
 
         return {"success": True}, 200
 
-
-@rest_api.route('/api/sessions/oauth/github/')
-class GitHubLogin(Resource):
-    def get(self):
-        code = request.args.get('code')
-        client_id = BaseConfig.GITHUB_CLIENT_ID
-        client_secret = BaseConfig.GITHUB_CLIENT_SECRET
-        root_url = 'https://github.com/login/oauth/access_token'
-
-        params = { 'client_id': client_id, 'client_secret': client_secret, 'code': code }
-
-        data = requests.post(root_url, params=params, headers={
-            'Content-Type': 'application/x-www-form-urlencoded',
-        })
-
-        response = data._content.decode('utf-8')
-        access_token = response.split('&')[0].split('=')[1]
-
-        user_data = requests.get('https://api.github.com/user', headers={
-            "Authorization": "Bearer " + access_token
-        }).json()
-        
-        user_exists = Users.get_by_username(user_data['login'])
-        if user_exists:
-            user = user_exists
-        else:
-            try:
-                user = Users(username=user_data['login'], email=user_data['email'])
-                user.save()
-            except:
-                user = Users(username=user_data['login'])
-                user.save()
-        
-        user_json = user.toJSON()
-
-        token = jwt.encode({"username": user_json['username'], 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
-        user.set_jwt_auth_active(True)
-        user.save()
-
-        return {"success": True,
-                "user": {
-                    "_id": user_json['_id'],
-                    "email": user_json['email'],
-                    "username": user_json['username'],
-                    "token": token,
-                }}, 200
-
-
 @rest_api.route("/api/users/add_patient",methods=["POST"])
 class UserPatient(Resource):
     # @token_required
@@ -308,11 +246,7 @@ class UserPatient(Resource):
         status = req_data["status"]
         addresses = req_data["addresses"]
         field_data = req_data["fields"]
-        print(name,date_object,status)
-        print("success getting data")
         new_patient = Patient(name=name, dob=date_object,status = status)
-        print(new_patient.id)
-        print("success adding patient infor")
         new_patient.save()        
         # Commit the session to get the id for the new patient
         
@@ -338,7 +272,6 @@ class UserPatient(Resource):
 
 @rest_api.route("/api/users/update_patient/<int:patient_id>")
 class UpdatePatient(Resource):
-    
     # @token_required
     def put(self, patient_id):
         # Fetch the patient by id from the database
@@ -409,6 +342,7 @@ class UpdatePatient(Resource):
 
 @rest_api.route("/api/users/get_patient/<int:patient_id>")
 class PatientInformation(Resource):
+    # @token_required
     def get(self, patient_id):
         # Query the database to get the patient by ID
         patient = Patient.query.get(patient_id)
@@ -441,8 +375,10 @@ class PatientInformation(Resource):
 
 @rest_api.route("/api/users/dashboard")
 class Dashboard(Resource):
-    def get(self):
+    @token_required
+    def get(self,user):
         # Connect to the SQLite database
+        print("Should be here")
         db_path = "/Users/ntuan_195/react-flask-authentication/api-server-flask/api/db.sqlite3"
         conn = sqlite3.connect(db_path)
         # Create a cursor object to execute SQL queries
@@ -501,6 +437,7 @@ class Dashboard(Resource):
 
 @rest_api.route("/api/users/search")
 class GeneralSearch(Resource):
+    @token_required
     def get(self):
         # Get search query parameter
         query = request.args.get('query', default="", type=str)
