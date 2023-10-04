@@ -6,7 +6,7 @@ import { Select, MenuItem, InputBase, IconButton, Paper, TextField } from '@mate
 import SearchIcon from '@material-ui/icons/Search';
 import { useSelector } from 'react-redux';
 import debounce from 'lodash/debounce'; 
-
+import configData from '../../config';
 
 const styles = {
     root: {
@@ -34,19 +34,23 @@ function SearchBar({onSearch}) {
   const account = useSelector((state) => state.account);
   const [loading, setLoading] = useState(false); // Loading indicator state
   const [cachedResults, setCachedResults] = useState({}); // Cache for search results
-
   const debouncedSearch = useRef(debounce((term, type) => handleSearch(term, type), 500)).current;
 
   const handleSearch = async (term, type) => {
     setLoading(true);
+    console.log("handleSearch here ", term,type)
     try {
       if (cachedResults[term]) {
         // Use cached results if available
         onSearch(cachedResults[term]);
       } else {
-        const response = await axios.get(`/api/users/search?query=${term}&type=${type}`, {
+        console.log("Failed here")
+        console.log(configData.API_SERVER)
+        console.log("users/search?query=${term}&type=${type}")
+        const response = await axios.get(configData.API_SERVER+`users/search?query=${term}&type=${type}`, {
           headers: { Authorization: `${account.token}` },
         });
+        console.log("DAta responsed", response.data)
         if (response.data.success) {
           const results = response.data.patients;
           setCachedResults((prevCachedResults) => ({ ...prevCachedResults, [term]: results }));

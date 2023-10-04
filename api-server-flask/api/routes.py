@@ -55,6 +55,7 @@ def token_required(f):
 
         if "authorization" in request.headers:
             token = request.headers["authorization"]
+            print(token)
 
         if not token:
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
@@ -62,7 +63,6 @@ def token_required(f):
         data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
         email_data = data["email"]
         user = Users.get_by_email(email=email_data)
-        print("Hello here ", user)
         token_expired = db.session.query(JWTTokenBlocklist.id).filter_by(jwt_token=token).scalar()
         if token_expired is not None:
                 return {"success": False, "msg": "Token revoked."}, 400
@@ -86,16 +86,11 @@ def fetch_user(res):
     google_id = user_info.get('sub')
     _email = user_info.get('email')
     user_name = _email.split("@")[0]
-
     # Check if user is already registered
     user = Users.query.filter_by(email=_email).first()
-
-       
     if not user:
         user = Users( oauth_user_id=google_id, email=_email,username=user_name)
-        # user = Users(email=_email)
         user.save()
-
     token = jwt.encode({"email": _email, 'exp': datetime.utcnow() + timedelta(minutes=30)}, BaseConfig.SECRET_KEY)
     user.set_jwt_auth_active(True)
     user.save()
@@ -236,8 +231,8 @@ class LogoutUser(Resource):
 
 @rest_api.route("/api/users/add_patient",methods=["POST"])
 class UserPatient(Resource):
-    # @token_required
-    def post(self):
+    @token_required
+    def post(self,user):
         req_data = request.get_json()
         name = req_data["name"]
         dateofbirth = req_data["dob"]
@@ -272,8 +267,9 @@ class UserPatient(Resource):
 
 @rest_api.route("/api/users/update_patient/<int:patient_id>")
 class UpdatePatient(Resource):
-    # @token_required
-    def put(self, patient_id):
+    @token_required
+    def put(self,user,patient_id):
+        print("Got ehre")
         # Fetch the patient by id from the database
         patient = Patient.query.get(patient_id)
         
@@ -342,7 +338,7 @@ class UpdatePatient(Resource):
 
 @rest_api.route("/api/users/get_patient/<int:patient_id>")
 class PatientInformation(Resource):
-    # @token_required
+    @token_required
     def get(self, patient_id):
         # Query the database to get the patient by ID
         patient = Patient.query.get(patient_id)
@@ -378,7 +374,6 @@ class Dashboard(Resource):
     @token_required
     def get(self,user):
         # Connect to the SQLite database
-        print("Should be here")
         db_path = "/Users/ntuan_195/react-flask-authentication/api-server-flask/api/db.sqlite3"
         conn = sqlite3.connect(db_path)
         # Create a cursor object to execute SQL queries
@@ -438,10 +433,10 @@ class Dashboard(Resource):
 @rest_api.route("/api/users/search")
 class GeneralSearch(Resource):
     @token_required
-    def get(self):
+    def get(self,user):
         # Get search query parameter
         query = request.args.get('query', default="", type=str)
-        
+        print(query)
         # Perform search query in the database
         patients = db.session.query(Patient).join(Address, isouter=True).join(Field, isouter=True).filter(
             or_(
