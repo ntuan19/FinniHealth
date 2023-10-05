@@ -2,16 +2,7 @@ import { config } from '@swc/core/spack';
 import axios from 'axios';
 import React, { useState } from 'react';
 import configData from '../../config';
-import {
-    Button,
-    TextField,
-    FormControl,
-    FormLabel,
-    IconButton,
-    Paper,
-    Typography,
-    Box
-  } from '@material-ui/core';
+import { FormControl, FormLabel, TextField, Button, IconButton, Paper, Typography, InputLabel, Select, MenuItem } from '@material-ui/core';
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 import { makeStyles } from '@material-ui/core/styles';
@@ -23,7 +14,7 @@ function FormComponent({ onHide }) {
     const [formData, setFormData] = useState({
         name: ' ',
         dob: ' ',
-        status: ' ',
+        status: "Inquiry",
         addresses: [{ street: '', city: '', state: '', zipcode: '' }],
         fields: [{field_name:"",field_value:""}]
     });
@@ -152,7 +143,16 @@ function FormComponent({ onHide }) {
                     </FormControl>
                     <FormControl margin="normal" fullWidth>
                         <FormLabel>Status:</FormLabel>
-                        <TextField name="status" value={formData.status} onChange={handleInputChange} variant="outlined" />
+                        <Select
+                                name="status"
+                                value={formData.status}
+                                onChange={handleInputChange}
+                            >
+                                <MenuItem value="Inquiry">Inquiry</MenuItem>
+                                <MenuItem value="Onboarding">Onboarding</MenuItem>
+                                <MenuItem value="Active">Active</MenuItem>
+                                <MenuItem value="Churned">Churned</MenuItem>
+                            </Select>
                     </FormControl>
                     {formData.addresses.map((address, index) => (
                         <FormControl key={index} margin="normal" fullWidth>

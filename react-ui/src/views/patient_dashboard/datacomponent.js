@@ -9,6 +9,12 @@ import SearchBar from './searchbar';
 import { useSelector } from 'react-redux';
 import {store} from "/Users/ntuan_195/react-flask-authentication/react-ui/src/store/index.js";
 
+const PatientStatus = {
+    Inquiry: "Inquiry",
+    Onboarding: "Onboarding",
+    Active: "Active",
+    Churned: "Churned"
+};
 function ListInfoEdit({ listInfo, onChange, index }) {
     return (
         <div>
@@ -66,7 +72,7 @@ function PatientEdit({ patient, onSave }) {
     return (
         <div>
             {Object.entries(editedPatient).map(([key, value]) => {
-                if (key !== 'id' && key !== 'addresses' && key !== 'fields') {
+                if (key !== 'id' && key !== 'addresses' && key !== 'fields' && key != "status") {
                     return (
                         <div key={key}>
                             <label>{key}:</label>
@@ -104,7 +110,23 @@ function PatientEdit({ patient, onSave }) {
                             ))}
                         </div>
                     );
-                } else {
+                } else if (key === 'status') {
+                    return (
+                        <div key={key}>
+                            <label>{key}:</label>
+                            <select 
+                                value={value} 
+                                onChange={(e) => setEditedPatient({ ...editedPatient, [key]: e.target.value })}
+                            >
+                                <option value="Inquiry">Inquiry</option>
+                                <option value="Onboarding">Onboarding</option>
+                                <option value="Active">Active</option>
+                                <option value="Churned">Churned</option>
+                            </select>
+                        </div>
+                    );
+                }                 
+                else {
                     return null;
                 }
             })}
@@ -178,7 +200,7 @@ function Patient({ patient, onUpdate }) {
                             DOB: {patient.dob}
                         </Typography>
                         <Typography variant="body1" >
-                            Status: {patient.status}
+                            Status: {PatientStatus[patient.status]}
                         </Typography>
                         {patient.addresses.map((address) => (
                             <Box className={classes.address}>

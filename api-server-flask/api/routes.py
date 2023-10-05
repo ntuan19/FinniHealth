@@ -20,6 +20,7 @@ from datetime import datetime
 from requests_oauthlib import OAuth2Session
 from flask import session, redirect 
 rest_api = Api(version="1.0", title="Users API")
+from .helper import VALID_STATUSES,is_valid_status
 
 
 
@@ -135,7 +136,6 @@ class Register(Resource):
         _password = req_data.get("password")
 
         user_exists = Users.get_by_email(_email)
-        print(user_exists)
         if user_exists:
             return {"success": False,
                     "msg": "Email already taken"}, 400
@@ -229,16 +229,20 @@ class LogoutUser(Resource):
 
         return {"success": True}, 200
 
+
 @rest_api.route("/api/users/add_patient",methods=["POST"])
 class UserPatient(Resource):
     @token_required
     def post(self,user):
         req_data = request.get_json()
+        print(req_data)
         name = req_data["name"]
         dateofbirth = req_data["dob"]
         date_format = '%Y-%m-%d'
         date_object = datetime.strptime(dateofbirth, date_format).date()
         status = req_data["status"]
+        if not is_valid_status(status):
+            return {"success": False, "message": "Invalid status value"}, 400
         addresses = req_data["addresses"]
         field_data = req_data["fields"]
         new_patient = Patient(name=name, dob=date_object,status = status)
@@ -285,7 +289,9 @@ class UpdatePatient(Resource):
             date_format = '%Y-%m-%d'
             date_object = datetime.strptime(dateofbirth, date_format).date()
             patient.dob = date_object
-        if "status" in req_data:
+        if "status" in req_data: 
+            if not is_valid_status(req_data["status"]):
+                return {"success": False, "message": "Invalid status value"}, 400
             patient.status = req_data["status"]
         if "address" in req_data:
             new_addresses = req_data["address"]
