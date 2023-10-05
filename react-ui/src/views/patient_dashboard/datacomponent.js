@@ -2,36 +2,49 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import configData from '../../config';
 import './styles.css';
-import { Card, CardContent, Typography, Box, Button } from '@material-ui/core';
-import { makeStyles } from '@material-ui/styles';
+import { Card, CardContent, Typography, Box, Button,CardHeader } from '@material-ui/core';
+import { makeStyles} from '@material-ui/styles';
 import AddPatientButton from './button';
 import SearchBar from './searchbar';
 import { useSelector } from 'react-redux';
 import {store} from "/Users/ntuan_195/react-flask-authentication/react-ui/src/store/index.js";
 
-
+const PatientStatus = {
+    Inquiry: "Inquiry",
+    Onboarding: "Onboarding",
+    Active: "Active",
+    Churned: "Churned"
+};
 function ListInfoEdit({ listInfo, onChange, index }) {
     return (
         <div>
             {Object.entries(listInfo).map(([key, value]) => (
                 <div key={key}>
                     <label>{key}:</label>
-                    <input value={value} onChange={(e) => onChange(index, { ...listInfo, [key]: e.target.value })} />
+                    <input 
+                        value={value} 
+                        onChange={(e) => onChange(index, { ...listInfo, [key]: e.target.value })} 
+                    />
                 </div>
             ))}
         </div>
     );
 }
 
+
+
 function PatientEdit({ patient, onSave }) {
     const [editedPatient, setEditedPatient] = useState(patient);
     const currentState = store.getState();
     const account = useSelector((state) => state.account);
 
-    
     const handleSave = async () => {
         try {
-            const response = await axios.put(`${configData.API_SERVER}users/update_patient/${editedPatient.id}`, editedPatient,{ headers: { "Authorization": `${account.token}` } });
+            const response = await axios.put(
+                `${configData.API_SERVER}users/update_patient/${editedPatient.id}`, 
+                editedPatient, 
+                { headers: { "Authorization": `${account.token}` } }
+            );
             if (response.data.success) {
                 onSave(editedPatient);
             } else {
@@ -41,37 +54,79 @@ function PatientEdit({ patient, onSave }) {
             console.error('API request failed:', error);
         }
     };
-    const handleChange = (index, updatedInfo) => {
-        setEditedPatient({
-            ...editedPatient,
-            addresses: editedPatient.addresses.map((address, i) => (i === index ? updatedInfo : address))
-        });
-        setEditedPatient({
-            ...editedPatient,
-            fields: editedPatient.fields.map((field, i) => (i === index ? updatedInfo : field))
-        });
+
+    const handleChange = (type, index, updatedInfo) => {
+        if (type === 'addresses') {
+            setEditedPatient({
+                ...editedPatient,
+                addresses: editedPatient.addresses.map((address, i) => (i === index ? updatedInfo : address))
+            });
+        } else if (type === 'fields') {
+            setEditedPatient({
+                ...editedPatient,
+                fields: editedPatient.fields.map((field, i) => (i === index ? updatedInfo : field))
+            });
+        }
     };
 
     return (
         <div>
             {Object.entries(editedPatient).map(([key, value]) => {
-                if (key !== 'id' && key !== 'addresses' && key !== 'fields') {
+                if (key !== 'id' && key !== 'addresses' && key !== 'fields' && key != "status") {
                     return (
                         <div key={key}>
                             <label>{key}:</label>
-                            <input value={value} onChange={(e) => setEditedPatient({ ...editedPatient, [key]: e.target.value })} />
+                            <input 
+                                value={value} 
+                                onChange={(e) => setEditedPatient({ ...editedPatient, [key]: e.target.value })} 
+                            />
                         </div>
                     );
-                } else if (key === 'addresses' || key === 'fields') {
+                } else if (key === 'addresses') {
                     return (
                         <div key={key}>
                             <label>{key}:</label>
                             {value.map((info, index) => (
-                                <ListInfoEdit key={index} listInfo={info} onChange={handleChange} index={index} />
+                                <ListInfoEdit 
+                                    key={index} 
+                                    listInfo={info} 
+                                    onChange={(i, updatedInfo) => handleChange('addresses', i, updatedInfo)} 
+                                    index={index} 
+                                />
                             ))}
                         </div>
                     );
-                } else {
+                } else if (key === 'fields') {
+                    return (
+                        <div key={key}>
+                            <label>{key}:</label>
+                            {value.map((info, index) => (
+                                <ListInfoEdit 
+                                    key={index} 
+                                    listInfo={info} 
+                                    onChange={(i, updatedInfo) => handleChange('fields', i, updatedInfo)} 
+                                    index={index} 
+                                />
+                            ))}
+                        </div>
+                    );
+                } else if (key === 'status') {
+                    return (
+                        <div key={key}>
+                            <label>{key}:</label>
+                            <select 
+                                value={value} 
+                                onChange={(e) => setEditedPatient({ ...editedPatient, [key]: e.target.value })}
+                            >
+                                <option value="Inquiry">Inquiry</option>
+                                <option value="Onboarding">Onboarding</option>
+                                <option value="Active">Active</option>
+                                <option value="Churned">Churned</option>
+                            </select>
+                        </div>
+                    );
+                }                 
+                else {
                     return null;
                 }
             })}
@@ -79,8 +134,47 @@ function PatientEdit({ patient, onSave }) {
         </div>
     );
 }
+const useStyles = makeStyles((theme) => ({
+    patientBlock: {
+        padding: '20px',
+        margin: '20px 0',
+        backgroundColor: "white",  // Stronger color for the block
+    },
+    contentBox: {
+        border: '2px  #888',
+        padding: "16px",
+        color: "black",
+        backgroundColor: "#e6f9ff"
+    },
+    patientTitle: {
+        textAlign: 'center',
+        fontWeight: 'bold',
+        fontSize: '28px',  // Increased font size for more prominence
+        marginBottom: '20px',
+    },
+    boldTextWithColor: {
+        fontWeight: 'bold',
+        color: '#334',
+        display:"flex",
+        alignItems: "center",      // Vertically aligns text to center
+        justifyContent: "center", 
+        margin: "10px auto",
+        fontSize: "1.2em"
+    },
+    editButton: {
+        display: 'block',     // Makes the button treat as block
+        margin: '10px auto',  // Centers the block-level button
+        padding: '10px 20px', // Optional: Adjusts padding for button size
+        backgroundColor: theme.palette.primary.main,
+        color: '#fff',
+        '&:hover': {
+            backgroundColor: theme.palette.primary.dark,
+        }
+    }
+}));
 
 function Patient({ patient, onUpdate }) {
+    const classes = useStyles();
     const [isEditing, setIsEditing] = useState(false);
 
     const handleUpdate = (updatedPatient) => {
@@ -89,37 +183,41 @@ function Patient({ patient, onUpdate }) {
     };
 
     return (
-        <Card className="patient_block">
+        <Card className={classes.patientBlock}>
             {isEditing ? (
                 <PatientEdit patient={patient} onSave={handleUpdate} />
             ) : (
                 <Box>
-                    <CardContent className="contentBox">
-                        <Typography variant="h6" className="boldText">
+                    <div className={classes.boldTextWithColor}>
+                            Patient   
+                    </div>
+                    <CardContent className={classes.contentBox}>
+                        
+                        <Typography variant="body1">
                             Name: {patient.name}
                         </Typography>
-                        <Typography variant="body1" className="boldText">
+                        <Typography variant="body1" >
                             DOB: {patient.dob}
                         </Typography>
-                        <Typography variant="body1" className="boldText">
-                            Status: {patient.status}
+                        <Typography variant="body1" >
+                            Status: {PatientStatus[patient.status]}
                         </Typography>
                         {patient.addresses.map((address) => (
-                            <Box className="address">
-                                <Typography variant="body2">Street: {address.street}</Typography>
-                                <Typography variant="body2">State: {address.state}</Typography>
-                                <Typography variant="body2">City: {address.city}</Typography>
-                                <Typography variant="body2">Zipcode: {address.zipcode}</Typography>
+                            <Box className={classes.address}>
+                                <Typography variant="body1" >Street: {address.street}</Typography>
+                                <Typography variant="body1" >State: {address.state}</Typography>
+                                <Typography variant="body1" >City: {address.city}</Typography>
+                                <Typography variant="body1">Zipcode: {address.zipcode}</Typography>
                             </Box>
                         ))}
                         {patient.fields.map((field) => (
-                            <Box className="field">
-                                <Typography variant="body2">Field Name: {field.field_name}</Typography>
-                                <Typography variant="body2">Field Value: {field.field_value}</Typography>
+                            <Box className={classes.field}>
+                                <Typography variant="body1" >Field Name: {field.field_name}</Typography>
+                                <Typography variant="body1" >Field Value: {field.field_value}</Typography>
                             </Box>
                         ))}
                     </CardContent>
-                    <Button variant="contained" className="editButton" onClick={() => setIsEditing(true)}>
+                    <Button textAlign='center' variant="contained" className={classes.editButton} onClick={() => setIsEditing(true)}>
                         Edit
                     </Button>
                 </Box>
@@ -127,6 +225,7 @@ function Patient({ patient, onUpdate }) {
         </Card>
     );
 }
+
 
 function PatientDataComponent({ addPatient }) {
     const [patientData, setPatientData] = useState([]);
@@ -154,7 +253,6 @@ function PatientDataComponent({ addPatient }) {
     }, [addPatient]);
   
     const handleSearch = (results) => {
-      console.log("handleSearch")
       setSearchResults(results);
     };
     const handleUpdate = (updatedPatient) => {

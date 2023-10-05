@@ -7,6 +7,8 @@ import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from flask_dance.contrib.google import make_google_blueprint, google
+import enum
+from sqlalchemy import Enum
 
 db = SQLAlchemy()
 
@@ -86,13 +88,21 @@ class JWTTokenBlocklist(db.Model):
         db.session.add(self)
         db.session.commit()
 
+
+
+class PatientStatus(enum.Enum):
+    Inquiry = "Inquiry"
+    Onboarding = "Onboarding"
+    Active = "Active"
+    Churned = "Churned"
+
 class Patient(db.Model):
     __tablename__ = 'patient'
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     dob = db.Column(db.Date, nullable=False)
-    status = db.Column(db.String(100), nullable=False)
+    status = db.Column(Enum(PatientStatus), nullable=False)
     
     address = db.relationship('Address', backref='patient', lazy=True)
     fields = db.relationship('Field', backref='patient', lazy=True)
