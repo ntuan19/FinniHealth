@@ -9,29 +9,36 @@ import SearchBar from './searchbar';
 import { useSelector } from 'react-redux';
 import {store} from "/Users/ntuan_195/react-flask-authentication/react-ui/src/store/index.js";
 
-
 function ListInfoEdit({ listInfo, onChange, index }) {
     return (
         <div>
             {Object.entries(listInfo).map(([key, value]) => (
                 <div key={key}>
                     <label>{key}:</label>
-                    <input value={value} onChange={(e) => onChange(index, { ...listInfo, [key]: e.target.value })} />
+                    <input 
+                        value={value} 
+                        onChange={(e) => onChange(index, { ...listInfo, [key]: e.target.value })} 
+                    />
                 </div>
             ))}
         </div>
     );
 }
 
+
+
 function PatientEdit({ patient, onSave }) {
     const [editedPatient, setEditedPatient] = useState(patient);
     const currentState = store.getState();
     const account = useSelector((state) => state.account);
 
-    
     const handleSave = async () => {
         try {
-            const response = await axios.put(`${configData.API_SERVER}users/update_patient/${editedPatient.id}`, editedPatient,{ headers: { "Authorization": `${account.token}` } });
+            const response = await axios.put(
+                `${configData.API_SERVER}users/update_patient/${editedPatient.id}`, 
+                editedPatient, 
+                { headers: { "Authorization": `${account.token}` } }
+            );
             if (response.data.success) {
                 onSave(editedPatient);
             } else {
@@ -41,15 +48,19 @@ function PatientEdit({ patient, onSave }) {
             console.error('API request failed:', error);
         }
     };
-    const handleChange = (index, updatedInfo) => {
-        setEditedPatient({
-            ...editedPatient,
-            addresses: editedPatient.addresses.map((address, i) => (i === index ? updatedInfo : address))
-        });
-        setEditedPatient({
-            ...editedPatient,
-            fields: editedPatient.fields.map((field, i) => (i === index ? updatedInfo : field))
-        });
+
+    const handleChange = (type, index, updatedInfo) => {
+        if (type === 'addresses') {
+            setEditedPatient({
+                ...editedPatient,
+                addresses: editedPatient.addresses.map((address, i) => (i === index ? updatedInfo : address))
+            });
+        } else if (type === 'fields') {
+            setEditedPatient({
+                ...editedPatient,
+                fields: editedPatient.fields.map((field, i) => (i === index ? updatedInfo : field))
+            });
+        }
     };
 
     return (
@@ -59,15 +70,37 @@ function PatientEdit({ patient, onSave }) {
                     return (
                         <div key={key}>
                             <label>{key}:</label>
-                            <input value={value} onChange={(e) => setEditedPatient({ ...editedPatient, [key]: e.target.value })} />
+                            <input 
+                                value={value} 
+                                onChange={(e) => setEditedPatient({ ...editedPatient, [key]: e.target.value })} 
+                            />
                         </div>
                     );
-                } else if (key === 'addresses' || key === 'fields') {
+                } else if (key === 'addresses') {
                     return (
                         <div key={key}>
                             <label>{key}:</label>
                             {value.map((info, index) => (
-                                <ListInfoEdit key={index} listInfo={info} onChange={handleChange} index={index} />
+                                <ListInfoEdit 
+                                    key={index} 
+                                    listInfo={info} 
+                                    onChange={(i, updatedInfo) => handleChange('addresses', i, updatedInfo)} 
+                                    index={index} 
+                                />
+                            ))}
+                        </div>
+                    );
+                } else if (key === 'fields') {
+                    return (
+                        <div key={key}>
+                            <label>{key}:</label>
+                            {value.map((info, index) => (
+                                <ListInfoEdit 
+                                    key={index} 
+                                    listInfo={info} 
+                                    onChange={(i, updatedInfo) => handleChange('fields', i, updatedInfo)} 
+                                    index={index} 
+                                />
                             ))}
                         </div>
                     );
@@ -154,7 +187,6 @@ function PatientDataComponent({ addPatient }) {
     }, [addPatient]);
   
     const handleSearch = (results) => {
-      console.log("handleSearch")
       setSearchResults(results);
     };
     const handleUpdate = (updatedPatient) => {
