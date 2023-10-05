@@ -463,7 +463,7 @@ class GeneralSearch(Resource):
             "id": patient.id,
             "name": patient.name,
             "dob": patient.dob.isoformat(),
-            "status": patient.status,
+            "status": patient.status.value,
             "addresses": [{
                 "street": address.street,
                 "city": address.city,
@@ -478,6 +478,24 @@ class GeneralSearch(Resource):
         
         return {"success": True, "patients": results}, 200
 
-# Add the search endpoint to the API
+@rest_api.route("/api/users/status_counts")
+class StatusCounts(Resource):
+    @token_required
+    def get(self, user):
+        print("Get here?")
+        PatientStatus = {
+            "Inquiry": "Inquiry",
+            "Onboarding": "Onboarding",
+            "Active": "Active",
+            "Churned": "Churned"
+        }
+        status_counts = {}
+        # Iterate over each status type and count the patients
+        for status in PatientStatus:
+            count = db.session.query(Patient).filter(Patient.status == status).count()
+            status_counts[status] = 0
+            status_counts[status] += count
+        print(status_counts)
+        return {"success": True, "status_counts": status_counts}, 200
 
 

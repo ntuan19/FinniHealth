@@ -1,23 +1,28 @@
 import PropTypes from 'prop-types';
-import React from 'react';
-
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 // material-ui
 import { makeStyles } from '@material-ui/styles';
-import { Avatar, Grid, Menu, MenuItem, Typography } from '@material-ui/core';
+// import { Avatar, Grid, Menu, MenuItem, Typography } from '@material-ui/core';
 
 // project imports
 import MainCard from './../../../ui-component/cards/MainCard';
 import SkeletonEarningCard from './../../../ui-component/cards/Skeleton/EarningCard';
 
-// assets
-import EarningIcon from './../../../assets/images/icons/earning.svg';
+// // assets
+// import EarningIcon from './../../../assets/images/icons/earning.svg';
 import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
+// import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+// import GetAppTwoToneIcon from '@material-ui/icons/GetAppOutlined';
+// import FileCopyTwoToneIcon from '@material-ui/icons/FileCopyOutlined';
+// import PictureAsPdfTwoToneIcon from '@material-ui/icons/PictureAsPdfOutlined';
+// import ArchiveTwoToneIcon from '@material-ui/icons/ArchiveOutlined';
+// import PropTypes from 'prop-types';
+import { Grid, Typography, Avatar, Button, IconButton, FormControl, FormLabel, TextField, Menu, MenuItem } from '@material-ui/core';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
-import GetAppTwoToneIcon from '@material-ui/icons/GetAppOutlined';
-import FileCopyTwoToneIcon from '@material-ui/icons/FileCopyOutlined';
-import PictureAsPdfTwoToneIcon from '@material-ui/icons/PictureAsPdfOutlined';
-import ArchiveTwoToneIcon from '@material-ui/icons/ArchiveOutlined';
-
+import { useSelector } from 'react-redux';
+import configData from "/Users/ntuan_195/react-flask-authentication/react-ui/src/config.js"
 // style constant
 const useStyles = makeStyles((theme) => ({
     card: {
@@ -100,89 +105,73 @@ const useStyles = makeStyles((theme) => ({
 
 //===========================|| DASHBOARD DEFAULT - EARNING CARD ||===========================//
 
+
 const EarningCard = ({ isLoading }) => {
     const classes = useStyles();
 
-    const [anchorEl, setAnchorEl] = React.useState(null);
+    const [statusAnchor, setStatusAnchor] = useState(null);
+    const [statusCounts, setStatusCounts] = useState({});
+    const [selectedStatus, setSelectedStatus] = useState('Total Patients');
+    const [selectedStatusCount, setSelectedStatusCount] = useState(0);
+    const account = useSelector((state) => state.account);
 
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
+    useEffect(() => {
+        async function fetchStatusCounts() {
+            try {
+                const response = await axios.get(`${configData.API_SERVER}/users/status_counts`,{ headers: { "Authorization": `${account.token}` }});
+                if (response.data.success) {
+                    setStatusCounts(response.data.status_counts);
+                    setSelectedStatusCount(Object.values(response.data.status_counts).reduce((a, b) => a + b, 0));
+                }
+            } catch (error) {
+                console.error("Failed to fetch patient status counts", error);
+            }
+        }
+        fetchStatusCounts();
+    }, []);
+
+    const handleStatusClick = (event) => {
+        setStatusAnchor(event.currentTarget);
     };
 
-    const handleClose = () => {
-        setAnchorEl(null);
+    const handleStatusClose = () => {
+        setStatusAnchor(null);
+    };
+
+    const handleStatusSelect = (status) => {
+        setSelectedStatus(status);
+        setSelectedStatusCount(statusCounts[status]);
+        setStatusAnchor(null);
     };
 
     return (
         <React.Fragment>
             {isLoading ? (
+                // Assuming you've defined a SkeletonEarningCard elsewhere in your project
                 <SkeletonEarningCard />
             ) : (
                 <MainCard border={false} className={classes.card} contentClass={classes.content}>
                     <Grid container direction="column">
                         <Grid item>
-                            <Grid container justifyContent="space-between">
-                                <Grid item>
-                                    <Avatar variant="rounded" className={classes.avatar}>
-                                        <img src={EarningIcon} alt="Notification" />
-                                    </Avatar>
-                                </Grid>
-                                <Grid item>
-                                    <Avatar
-                                        variant="rounded"
-                                        className={classes.avatarRight}
-                                        aria-controls="menu-earning-card"
-                                        aria-haspopup="true"
-                                        onClick={handleClick}
-                                    >
-                                        <MoreHorizIcon fontSize="inherit" />
-                                    </Avatar>
-                                    <Menu
-                                        id="menu-earning-card"
-                                        anchorEl={anchorEl}
-                                        keepMounted
-                                        open={Boolean(anchorEl)}
-                                        onClose={handleClose}
-                                        variant="selectedMenu"
-                                        anchorOrigin={{
-                                            vertical: 'bottom',
-                                            horizontal: 'right'
-                                        }}
-                                        transformOrigin={{
-                                            vertical: 'top',
-                                            horizontal: 'right'
-                                        }}
-                                    >
-                                        <MenuItem onClick={handleClose}>
-                                            <GetAppTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Import Card
-                                        </MenuItem>
-                                        <MenuItem onClick={handleClose}>
-                                            <FileCopyTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Copy Data
-                                        </MenuItem>
-                                        <MenuItem onClick={handleClose}>
-                                            <PictureAsPdfTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Export
-                                        </MenuItem>
-                                        <MenuItem onClick={handleClose}>
-                                            <ArchiveTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Archive File
-                                        </MenuItem>
-                                    </Menu>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                        <Grid item>
-                            <Grid container alignItems="center">
-                                <Grid item>
-                                    <Typography className={classes.cardHeading}>$500.00</Typography>
-                                </Grid>
-                                <Grid item>
-                                    <Avatar className={classes.avatarCircle}>
-                                        <ArrowUpwardIcon fontSize="inherit" className={classes.circleIcon} />
-                                    </Avatar>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                        <Grid item sx={{ mb: 1.25 }}>
-                            <Typography className={classes.subHeading}>Total Earning</Typography>
+                        <IconButton aria-controls="menu-status" aria-haspopup="true" onClick={handleStatusClick} style={{position: 'absolute', top: '10px', right: '20px', zIndex: 1000}}>
+                            <MoreVertIcon />
+                        </IconButton>
+
+                            <Menu
+                                id="menu-status"
+                                anchorEl={statusAnchor}
+                                keepMounted
+                                open={Boolean(statusAnchor)}
+                                onClose={handleStatusClose}
+                            >
+                                {['Inquiry', 'Onboarding', 'Active', 'Churned'].map(status => (
+                                    <MenuItem onClick={() => handleStatusSelect(status)} key={status}>
+                                        {status}
+                                    </MenuItem>
+                                ))}
+                            </Menu>
+                            <Typography className={classes.cardHeading}>{selectedStatusCount}</Typography>
+                            <Typography className={classes.subHeading}>{selectedStatus}</Typography>
                         </Grid>
                     </Grid>
                 </MainCard>
@@ -190,6 +179,83 @@ const EarningCard = ({ isLoading }) => {
         </React.Fragment>
     );
 };
+
+
+        // <React.Fragment>
+        //     {isLoading ? (
+        //         <SkeletonEarningCard />
+        //     ) : (
+        //         <MainCard border={false} className={classes.card} contentClass={classes.content}>
+        //             <Grid container direction="column">
+        //                 <Grid item>
+        //                     <Grid container justifyContent="space-between">
+        //                         <Grid item>
+        //                             <Avatar variant="rounded" className={classes.avatar}>
+        //                                 <img src={EarningIcon} alt="Notification" />
+        //                             </Avatar>
+        //                         </Grid>
+        //                         <Grid item>
+        //                             <Avatar
+        //                                 variant="rounded"
+        //                                 className={classes.avatarRight}
+        //                                 aria-controls="menu-earning-card"
+        //                                 aria-haspopup="true"
+        //                                 onClick={handleClick}
+        //                             >
+        //                                 <MoreHorizIcon fontSize="inherit" />
+        //                             </Avatar>
+        //                             <Menu
+        //                                 id="menu-earning-card"
+        //                                 anchorEl={anchorEl}
+        //                                 keepMounted
+        //                                 open={Boolean(anchorEl)}
+        //                                 onClose={handleClose}
+        //                                 variant="selectedMenu"
+        //                                 anchorOrigin={{
+        //                                     vertical: 'bottom',
+        //                                     horizontal: 'right'
+        //                                 }}
+        //                                 transformOrigin={{
+        //                                     vertical: 'top',
+        //                                     horizontal: 'right'
+        //                                 }}
+        //                             >
+        //                                 <MenuItem onClick={handleClose}>
+        //                                     <GetAppTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Import Card
+        //                                 </MenuItem>
+        //                                 <MenuItem onClick={handleClose}>
+        //                                     <FileCopyTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Copy Data
+        //                                 </MenuItem>
+        //                                 <MenuItem onClick={handleClose}>
+        //                                     <PictureAsPdfTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Export
+        //                                 </MenuItem>
+        //                                 <MenuItem onClick={handleClose}>
+        //                                     <ArchiveTwoToneIcon fontSize="inherit" className={classes.menuItem} /> Archive File
+        //                                 </MenuItem>
+        //                             </Menu>
+        //                         </Grid>
+        //                     </Grid>
+        //                 </Grid>
+        //                 <Grid item>
+        //                     <Grid container alignItems="center">
+        //                         <Grid item>
+        //                             <Typography className={classes.cardHeading}>$500.00</Typography>
+        //                         </Grid>
+        //                         <Grid item>
+        //                             <Avatar className={classes.avatarCircle}>
+        //                                 <ArrowUpwardIcon fontSize="inherit" className={classes.circleIcon} />
+        //                             </Avatar>
+        //                         </Grid>
+        //                     </Grid>
+        //                 </Grid>
+        //                 <Grid item sx={{ mb: 1.25 }}>
+        //                     <Typography className={classes.subHeading}>Total Earning</Typography>
+        //                 </Grid>
+        //             </Grid>
+        //         </MainCard>
+        //     )}
+        // </React.Fragment>
+// };
 
 EarningCard.propTypes = {
     isLoading: PropTypes.bool
