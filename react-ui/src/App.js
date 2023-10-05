@@ -13,10 +13,7 @@ import theme from './themes';
 import NavigationScroll from './layout/NavigationScroll';
 
 //-----------------------|| APP ||-----------------------//
-import Button from './views/patient_dashboard/button';
-import PatientDataComponent from './views/patient_dashboard/datacomponent';
-import EarningCard from './ui-component/cards/Skeleton/EarningCard';
-import SearchBar from './views/patient_dashboard/searchbar';
+
 
 const App = () => {
     const customization = useSelector((state) => state.customization);
@@ -30,13 +27,6 @@ const App = () => {
                 </NavigationScroll>
           </ThemeProvider>
         </StyledEngineProvider>
-       
-        //     <ThemeProvider theme={theme(customization)}>
-        //         <CssBaseline />
-        //         <NavigationScroll>
-        //             <Routes />
-        //         </NavigationScroll>
-        //     </ThemeProvider>
     );
 };
 

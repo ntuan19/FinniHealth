@@ -198,14 +198,8 @@ function AddPatientButton() {
 
 
     return (
-        <Box
-            display="flex"
-            justifyContent="left"
-            alignItems="center"
-            minHeight="10vh"
-        >
+        <div elevation={3} sx={{ p: 2 }}>
             {!showForm ? (
-                <Paper elevation={3} sx={{ p: 2 }}>
                     <Button
                         variant="contained"
                         color="primary"
@@ -217,11 +211,10 @@ function AddPatientButton() {
                     >
                         Add New Patient
                     </Button>
-                </Paper>
             ) : (
                 <FormComponent onHide={() => setShowForm(false)} />
             )}
-        </Box>
+        </div>
     )
 }
 
